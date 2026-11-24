@@ -135,7 +135,7 @@ function LoginFormContent() {
                 className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#B91C1C] px-4 button-sm text-[#FFFDF9] transition-[background-color,transform] duration-200 hover:bg-[#991B1B] active:scale-[0.98] disabled:opacity-50 cursor-pointer shadow-xs"
               >
                 <SignIn size={16} weight="bold" />
-                <span>{submitting ? "Signing in..." : "Sign in via FastAPI"}</span>
+                <span>{submitting ? "Signing in..." : "Sign in"}</span>
               </button>
 
               <p className="flex items-center gap-1.5 caption-5 text-[#78716C]">
