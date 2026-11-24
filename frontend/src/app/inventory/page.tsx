@@ -6,6 +6,7 @@ import {
   CheckCircle,
   MagnifyingGlass,
   Package,
+  PencilSimple,
   Plus,
   SlidersHorizontal,
   Warning,
@@ -42,6 +43,7 @@ export default function InventoryPage() {
     requestRestockTransfer,
     changeBatchStatus,
     addDirectStock,
+    editBatch,
     requestStockAdjustment,
     approveStockAdjustment,
     rejectStockAdjustment,
@@ -87,6 +89,17 @@ export default function InventoryPage() {
   const [stockInQty, setStockInQty] = useState("150");
   const [stockInNotes, setStockInNotes] = useState("Direct restock entry at Uttara Main Hub");
 
+  // Edit Stock Batch modal state
+  const [editBatchModal, setEditBatchModal] = useState<{
+    id: number;
+    productName: string;
+    batchNumber: string;
+    expiryDate: string;
+    currentQuantity: string;
+    purchaseCost: string;
+    notes: string;
+  } | null>(null);
+
   const productMap = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
   const locMap = useMemo(() => new Map(locations.map((l) => [l.id, l])), [locations]);
   const hubLocation = useMemo(
@@ -122,7 +135,13 @@ export default function InventoryPage() {
 
   const canManageBatch =
     user &&
-    ["owner", "head_office_manager", "branch_manager", "inventory_officer"].includes(user.role);
+    [
+      "owner",
+      "head_office_manager",
+      "branch_manager",
+      "inventory_officer",
+      "stock_entry_operator",
+    ].includes(user.role);
   const canRequestTransfer =
     user &&
     ["owner", "head_office_manager", "branch_manager", "pharmacist", "inventory_officer"].includes(
@@ -498,6 +517,26 @@ export default function InventoryPage() {
                           {canManageBatch && (
                             <td className="py-2.5 text-right">
                               <div className="inline-flex items-center gap-1.5">
+                                {canStockIn && (isGlobalRole || allowedLocationIds.has(b.location_id)) && (
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    onClick={() =>
+                                      setEditBatchModal({
+                                        id: b.id,
+                                        productName: prod?.name ?? `#${b.product_id}`,
+                                        batchNumber: b.batch_number,
+                                        expiryDate: b.expiry_date,
+                                        currentQuantity: String(b.current_quantity),
+                                        purchaseCost: String(b.purchase_cost),
+                                        notes: b.notes ?? "",
+                                      })
+                                    }
+                                  >
+                                    <PencilSimple size={13} />
+                                    <span>Edit</span>
+                                  </Button>
+                                )}
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -712,6 +751,106 @@ export default function InventoryPage() {
                 </Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Stock Batch Dialog */}
+        <Dialog open={Boolean(editBatchModal)} onOpenChange={(o) => !o && setEditBatchModal(null)}>
+          <DialogContent>
+            <DialogTitle>Edit Stock Batch</DialogTitle>
+            <DialogDescription>
+              Update batch number, expiry date, quantity, or unit cost for {editBatchModal?.productName}. Quantity changes are logged in the movement ledger.
+            </DialogDescription>
+            {editBatchModal && (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  try {
+                    await editBatch(editBatchModal.id, {
+                      batchNumber: editBatchModal.batchNumber.trim(),
+                      expiryDate: editBatchModal.expiryDate,
+                      currentQuantity: Math.max(0, Number(editBatchModal.currentQuantity)),
+                      purchaseCost: parseFloat(editBatchModal.purchaseCost) || 0,
+                      notes: editBatchModal.notes,
+                    });
+                    setFeedback(`Batch ${editBatchModal.batchNumber} updated successfully.`);
+                    setEditBatchModal(null);
+                  } catch (err) {
+                    setFeedback(err instanceof Error ? err.message : "Could not update batch.");
+                  }
+                }}
+                className="mt-4 flex flex-col gap-3"
+              >
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="caption-4 font-medium text-[#1C1917] block mb-1">Batch #</label>
+                    <Input
+                      required
+                      value={editBatchModal.batchNumber}
+                      onChange={(e) =>
+                        setEditBatchModal({ ...editBatchModal, batchNumber: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="caption-4 font-medium text-[#1C1917] block mb-1">Expiry Date</label>
+                    <Input
+                      type="date"
+                      required
+                      value={editBatchModal.expiryDate}
+                      onChange={(e) =>
+                        setEditBatchModal({ ...editBatchModal, expiryDate: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="caption-4 font-medium text-[#1C1917] block mb-1">Quantity</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      required
+                      value={editBatchModal.currentQuantity}
+                      onChange={(e) =>
+                        setEditBatchModal({ ...editBatchModal, currentQuantity: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="caption-4 font-medium text-[#1C1917] block mb-1">Unit Cost ($)</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      required
+                      value={editBatchModal.purchaseCost}
+                      onChange={(e) =>
+                        setEditBatchModal({ ...editBatchModal, purchaseCost: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="caption-4 font-medium text-[#1C1917] block mb-1">Update Reason / Notes</label>
+                  <Input
+                    value={editBatchModal.notes}
+                    onChange={(e) =>
+                      setEditBatchModal({ ...editBatchModal, notes: e.target.value })
+                    }
+                    placeholder="Reason for batch correction or restock update"
+                  />
+                </div>
+                <div className="mt-2 flex justify-end gap-2">
+                  <Button type="button" variant="ghost" onClick={() => setEditBatchModal(null)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" variant="primary">
+                    Save Batch Changes
+                  </Button>
+                </div>
+              </form>
+            )}
           </DialogContent>
         </Dialog>
 

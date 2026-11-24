@@ -133,6 +133,106 @@ async def direct_stock_in(
     return batch
 
 
+class BatchEditRequest(BaseModel):
+    batch_number: str | None = Field(default=None, min_length=2, max_length=80)
+    expiry_date: date | None = None
+    current_quantity: int | None = Field(default=None, ge=0, le=100000)
+    purchase_cost: Decimal | None = Field(default=None, ge=0)
+    notes: str | None = Field(default=None, max_length=300)
+
+
+@router.patch("/batches/{batch_id}", response_model=BatchResponse)
+async def edit_batch(
+    batch_id: int,
+    payload: BatchEditRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.OWNER,
+            UserRole.HEAD_OFFICE_MANAGER,
+            UserRole.INVENTORY_OFFICER,
+            UserRole.STOCK_ENTRY_OPERATOR,
+        )
+    ),
+) -> InventoryBatch:
+    """Update batch details or quantity directly (audited + ledger movement on quantity change)."""
+    batch = (
+        await db.execute(
+            select(InventoryBatch).where(InventoryBatch.id == batch_id).with_for_update()
+        )
+    ).scalar_one_or_none()
+    if batch is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Batch not found")
+
+    assert_location_access(current_user, batch.location_id)
+    prev = {
+        "batch_number": batch.batch_number,
+        "expiry_date": str(batch.expiry_date),
+        "current_quantity": batch.current_quantity,
+        "purchase_cost": str(batch.purchase_cost),
+        "notes": batch.notes,
+    }
+
+    qty_delta = 0
+    if payload.batch_number is not None:
+        batch.batch_number = payload.batch_number.strip().upper()
+    if payload.expiry_date is not None:
+        batch.expiry_date = payload.expiry_date
+    if payload.purchase_cost is not None:
+        batch.purchase_cost = payload.purchase_cost
+    if payload.notes is not None:
+        batch.notes = payload.notes
+    if payload.current_quantity is not None:
+        if payload.current_quantity < batch.reserved_quantity:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Quantity cannot be less than reserved quantity",
+            )
+        qty_delta = payload.current_quantity - batch.current_quantity
+        batch.current_quantity = payload.current_quantity
+
+    if qty_delta != 0:
+        await record_stock_movement(
+            db,
+            batch=batch,
+            movement_type=MovementType.ADJUSTMENT_IN if qty_delta > 0 else MovementType.ADJUSTMENT_OUT,
+            quantity_change=qty_delta,
+            reference_type="batch_edit",
+            reference_id=batch.id,
+            reason=payload.notes or "Direct stock batch update",
+            performed_by_user_id=current_user.id,
+        )
+
+    await record_audit(
+        db,
+        action="inventory.batch_update",
+        entity_type="inventory_batch",
+        entity_id=batch.id,
+        user_id=current_user.id,
+        location_id=batch.location_id,
+        previous_values=prev,
+        new_values={
+            "batch_number": batch.batch_number,
+            "expiry_date": str(batch.expiry_date),
+            "current_quantity": batch.current_quantity,
+            "purchase_cost": str(batch.purchase_cost),
+            "notes": batch.notes,
+        },
+        reason=payload.notes or "Direct stock batch update",
+    )
+    await db.commit()
+    await db.refresh(batch)
+
+    await event_bus.publish(
+        "inventory.batch_updated",
+        kind="receipt" if qty_delta >= 0 else "system",
+        title=f"Batch {batch.batch_number} updated",
+        detail=f"Quantity now {batch.current_quantity} ({'+' if qty_delta > 0 else ''}{qty_delta})",
+        actor=current_user.full_name,
+    )
+    return batch
+
+
 @router.get("/availability")
 async def network_stock_availability(
     q: str | None = None,

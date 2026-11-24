@@ -134,6 +134,16 @@ interface AppContextValue {
     supplierId?: number | null;
     notes?: string;
   }) => Promise<void>;
+  editBatch: (
+    batchId: number,
+    payload: {
+      batchNumber?: string;
+      expiryDate?: string;
+      currentQuantity?: number;
+      purchaseCost?: number;
+      notes?: string;
+    }
+  ) => Promise<void>;
   requestStockAdjustment: (payload: {
     batchId: number;
     quantityChange: number;
@@ -168,6 +178,7 @@ interface AppContextValue {
     notes?: string;
   }) => Promise<void>;
   addProduct: (payload: Partial<Product> & { sku: string; name: string }) => Promise<void>;
+  editProduct: (productId: number, payload: Partial<Product>) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -641,6 +652,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const editBatch = async (
+    batchId: number,
+    payload: {
+      batchNumber?: string;
+      expiryDate?: string;
+      currentQuantity?: number;
+      purchaseCost?: number;
+      notes?: string;
+    }
+  ) => {
+    if (mode === "live_api") {
+      await api.updateBatch(batchId, {
+        batch_number: payload.batchNumber,
+        expiry_date: payload.expiryDate,
+        current_quantity: payload.currentQuantity,
+        purchase_cost: payload.purchaseCost,
+        notes: payload.notes,
+      });
+      await loadLiveData();
+    }
+  };
+
   const requestStockAdjustment = async (payload: {
     batchId: number;
     quantityChange: number;
@@ -827,6 +860,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setProducts((prev) => [created, ...prev]);
   };
 
+  const editProduct = async (productId: number, payload: Partial<Product>) => {
+    if (mode === "live_api") {
+      await api.updateProduct(productId, payload);
+      await loadLiveData();
+      return;
+    }
+    setProducts((prev) =>
+      prev.map((p) => (p.id === productId ? { ...p, ...payload } : p))
+    );
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -875,6 +919,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         receivePurchaseOrderGoods,
         changeBatchStatus,
         addDirectStock,
+        editBatch,
         requestStockAdjustment,
         approveStockAdjustment,
         rejectStockAdjustment,
@@ -883,6 +928,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         returnSaleItem,
         submitDailyClosing,
         addProduct,
+        editProduct,
       }}
     >
       {children}

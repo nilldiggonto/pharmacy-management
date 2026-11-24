@@ -133,6 +133,8 @@ async def update_product(
             UserRole.OWNER,
             UserRole.HEAD_OFFICE_MANAGER,
             UserRole.PROCUREMENT_OFFICER,
+            UserRole.INVENTORY_OFFICER,
+            UserRole.STOCK_ENTRY_OPERATOR,
         )
     ),
 ) -> Product:

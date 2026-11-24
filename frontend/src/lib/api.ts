@@ -115,6 +115,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+  updateProduct: (productId: number, payload: Record<string, unknown>) =>
+    request<Product>(`/products/${productId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
 
   getSuppliers: () => request<Supplier[]>("/suppliers"),
   getNetworkAvailability: (q?: string) =>
@@ -137,6 +142,20 @@ export const api = {
     request<Batch>(`/inventory/batches/${batchId}/status`, {
       method: "PATCH",
       body: JSON.stringify({ status, reason }),
+    }),
+  updateBatch: (
+    batchId: number,
+    payload: {
+      batch_number?: string;
+      expiry_date?: string;
+      current_quantity?: number;
+      purchase_cost?: number;
+      notes?: string | null;
+    }
+  ) =>
+    request<Batch>(`/inventory/batches/${batchId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
     }),
   directStockIn: (payload: {
     location_id: number;
