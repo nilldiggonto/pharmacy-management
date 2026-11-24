@@ -106,3 +106,4 @@ export function ProductCard({ product, index = 0, onAdd }: ProductCardProps) {
     </motion.article>
   );
 }
+

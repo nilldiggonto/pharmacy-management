@@ -42,3 +42,4 @@ async def stream_events(token: str = Query(..., min_length=10)) -> StreamingResp
             "X-Accel-Buffering": "no",
         },
     )
+
