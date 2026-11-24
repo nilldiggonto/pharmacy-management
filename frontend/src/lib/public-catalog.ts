@@ -40,7 +40,7 @@ export const DHAKA_BRANCHES: PublicBranch[] = [
     phone: "+880 1711 100201",
     coldChain: true,
     expressPickup: true,
-    dhakaPos: [-0.3, -3.4],
+    dhakaPos: [-0.2, -2.55],
     services: ["24/7 Cold Chain", "OTC Express Pickup", "Pharmacist Consult"],
   },
   {
@@ -53,7 +53,7 @@ export const DHAKA_BRANCHES: PublicBranch[] = [
     phone: "+880 1711 100202",
     coldChain: true,
     expressPickup: true,
-    dhakaPos: [-2.6, -1.6],
+    dhakaPos: [-2.15, -1.45],
     services: ["OTC Express Pickup", "BP & Glucose Check", "Cold Chain"],
   },
   {
@@ -66,7 +66,7 @@ export const DHAKA_BRANCHES: PublicBranch[] = [
     phone: "+880 1711 100203",
     coldChain: true,
     expressPickup: true,
-    dhakaPos: [2.7, -2.1],
+    dhakaPos: [2.05, -1.65],
     services: ["Biologics Chiller", "OTC Express Pickup", "Home Dispatch"],
   },
   {
@@ -79,7 +79,7 @@ export const DHAKA_BRANCHES: PublicBranch[] = [
     phone: "+880 1711 100204",
     coldChain: true,
     expressPickup: true,
-    dhakaPos: [1.6, -0.5],
+    dhakaPos: [2.25, 0.35],
     services: ["Flagship Care Desk", "Cold Chain Vault", "Wholesale Desk"],
   },
   {
@@ -92,7 +92,7 @@ export const DHAKA_BRANCHES: PublicBranch[] = [
     phone: "+880 1711 100205",
     coldChain: true,
     expressPickup: true,
-    dhakaPos: [0.4, -0.9],
+    dhakaPos: [0.55, -0.95],
     services: ["OTC Express Pickup", "Pharmacist Consult", "Cold Chain"],
   },
   {
@@ -105,7 +105,7 @@ export const DHAKA_BRANCHES: PublicBranch[] = [
     phone: "+880 1711 100206",
     coldChain: true,
     expressPickup: true,
-    dhakaPos: [-2.7, 0.9],
+    dhakaPos: [-2.35, 0.55],
     services: ["OTC Express Pickup", "Family Care Counter", "Cold Chain"],
   },
   {
@@ -118,7 +118,7 @@ export const DHAKA_BRANCHES: PublicBranch[] = [
     phone: "+880 1711 100207",
     coldChain: true,
     expressPickup: true,
-    dhakaPos: [-1.4, 1.8],
+    dhakaPos: [-1.15, 2.05],
     services: ["Clinical Pharmacist", "Cold Chain Vault", "OTC Express Pickup"],
   },
   {
@@ -131,7 +131,7 @@ export const DHAKA_BRANCHES: PublicBranch[] = [
     phone: "+880 1711 100208",
     coldChain: true,
     expressPickup: true,
-    dhakaPos: [1.9, 2.7],
+    dhakaPos: [1.45, 2.15],
     services: ["Corporate Desk", "OTC Express Pickup", "Cold Chain"],
   },
 ];
@@ -273,3 +273,4 @@ export const PUBLIC_PRODUCTS: PublicProduct[] = [
     summary: "Prescription cardiovascular therapy. Requires licensed pharmacist verification.",
   },
 ];
+

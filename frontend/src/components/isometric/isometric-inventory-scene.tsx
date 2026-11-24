@@ -747,7 +747,7 @@ export function IsometricInventoryScene({
       />
 
       {/* Projected 2D Crisp Node Labels */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
         {labels.map((lbl) => {
           if (!lbl.visible) return null;
           const isSelected = lbl.code === selectedCode;

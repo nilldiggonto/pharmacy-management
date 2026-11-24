@@ -97,7 +97,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     href={item.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 title-5 transition-colors duration-300",
+                      "relative flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 title-5 transition-colors duration-300",
                       active
                         ? "text-[#f5f5f4]"
                         : "text-[#a8a29e] hover:text-[#f5f5f4] hover:bg-[#1f1f1f]"

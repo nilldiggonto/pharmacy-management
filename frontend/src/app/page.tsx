@@ -183,7 +183,7 @@ export default function PublicLandingPage() {
               </div>
 
               <h1 className="mt-5 max-w-[680px] heading-2 sm:heading-1 bg-gradient-to-r from-[#000000] to-[#666666] bg-clip-text text-transparent">
-                Clinical pharmacy care
+                Clinical pharmacy
                 <br />
                 engineered for Dhaka.
               </h1>

@@ -113,19 +113,21 @@ export function BangladeshDhakaMap3D({
     grid.position.y = -0.02;
     scene.add(grid);
 
-    // 1. Extruded 3D Bangladesh Map Base
+    // 1. Extruded 3D Bangladesh Map Base (scaled prominently around Dhaka)
     const bdShape = new THREE.Shape();
     BANGLADESH_OUTLINE.forEach(([x, y], idx) => {
-      if (idx === 0) bdShape.moveTo(x, y);
-      else bdShape.lineTo(x, y);
+      const sx = x * 1.95;
+      const sy = y * 1.95;
+      if (idx === 0) bdShape.moveTo(sx, sy);
+      else bdShape.lineTo(sx, sy);
     });
     bdShape.closePath();
 
     const bdGeo = new THREE.ExtrudeGeometry(bdShape, {
-      depth: 0.45,
+      depth: 0.55,
       bevelEnabled: true,
-      bevelThickness: 0.08,
-      bevelSize: 0.08,
+      bevelThickness: 0.1,
+      bevelSize: 0.1,
       bevelSegments: 3,
     });
     bdGeo.rotateX(-Math.PI / 2);
@@ -134,45 +136,45 @@ export function BangladeshDhakaMap3D({
       bdGeo,
       new THREE.MeshStandardMaterial({
         color: 0xffffff,
-        roughness: 0.45,
-        metalness: 0.05,
+        roughness: 0.4,
+        metalness: 0.04,
       })
     );
     bdMesh.receiveShadow = true;
     bdMesh.castShadow = true;
     scene.add(bdMesh);
 
-    // Crisp outline around Bangladesh
+    // Crisp hot-pink accented border around Bangladesh
     const bdEdge = new THREE.LineSegments(
       new THREE.EdgesGeometry(bdGeo, 24),
-      new THREE.LineBasicMaterial({ color: 0xd4d4d4, transparent: true, opacity: 0.8 })
+      new THREE.LineBasicMaterial({ color: 0xff1f7a, transparent: true, opacity: 0.32 })
     );
     scene.add(bdEdge);
 
-    // 2. Elevated Glowing Dhaka Sector Plateau (centered at 0, 0.55, 0)
+    // 2. Elevated Glowing Dhaka Sector Plateau (centered at 0, 0.62, 0)
     const dhakaGroup = new THREE.Group();
-    dhakaGroup.position.set(0, 0.55, 0);
+    dhakaGroup.position.set(0, 0.62, 0);
     scene.add(dhakaGroup);
 
     const dhakaPlate = new THREE.Mesh(
-      new THREE.CylinderGeometry(4.2, 4.45, 0.32, 48),
+      new THREE.CylinderGeometry(3.25, 3.45, 0.28, 48),
       new THREE.MeshStandardMaterial({
         color: 0xfff0f6,
-        roughness: 0.35,
+        roughness: 0.32,
         metalness: 0.05,
       })
     );
-    dhakaPlate.position.y = 0.16;
+    dhakaPlate.position.y = 0.14;
     dhakaPlate.receiveShadow = true;
     dhakaPlate.castShadow = true;
     dhakaGroup.add(dhakaPlate);
 
     const dhakaRim = new THREE.Mesh(
-      new THREE.TorusGeometry(4.24, 0.045, 16, 64),
+      new THREE.TorusGeometry(3.28, 0.045, 16, 64),
       new THREE.MeshBasicMaterial({ color: 0xff1f7a })
     );
     dhakaRim.rotation.x = Math.PI / 2;
-    dhakaRim.position.y = 0.33;
+    dhakaRim.position.y = 0.29;
     dhakaGroup.add(dhakaRim);
 
     // Central Tejgaon Cold-Chain Hub Tower at center of Dhaka Sector
@@ -346,8 +348,8 @@ export function BangladeshDhakaMap3D({
       frame++;
 
       // Smooth camera preset: Dhaka Sector close-up vs Full Bangladesh silhouette
-      const radius = viewModeRef.current === "dhaka" ? 11.4 : 21.5;
-      const heightY = viewModeRef.current === "dhaka" ? 9.2 : 16.5;
+      const radius = viewModeRef.current === "dhaka" ? 9.6 : 26.5;
+      const heightY = viewModeRef.current === "dhaka" ? 8.2 : 21.0;
       const desiredCam = new THREE.Vector3(
         Math.sin(orbitAzimuth) * radius,
         heightY,
@@ -497,3 +499,4 @@ export function BangladeshDhakaMap3D({
     </div>
   );
 }
+
