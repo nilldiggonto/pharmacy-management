@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { MedicineVisual } from "@/components/ui/medicine-visual";
 import { useApp } from "@/context/app-context";
 import { formatCurrency } from "@/lib/utils";
 
@@ -200,10 +201,22 @@ export default function ProductsPage() {
                         {p.sku}
                       </td>
                       <td className="py-2.5 pr-3">
-                        <p className="body-5 font-medium text-[#1C1917]">{p.name}</p>
-                        <p className="caption-5 text-[#78716C]">
-                          {p.generic_name ?? "General"} · {p.brand_name ?? p.manufacturer}
-                        </p>
+                        <div className="flex items-center gap-2.5">
+                          <MedicineVisual
+                            sku={p.sku}
+                            name={p.name}
+                            category={p.category}
+                            dosageForm={p.dosage_form}
+                            requiresPrescription={p.requires_prescription}
+                            size="sm"
+                          />
+                          <div>
+                            <p className="body-5 font-medium text-[#1C1917]">{p.name}</p>
+                            <p className="caption-5 text-[#78716C]">
+                              {p.generic_name ?? "General"} · {p.brand_name ?? p.manufacturer}
+                            </p>
+                          </div>
+                        </div>
                       </td>
                       <td className="py-2.5 pr-3">
                         <Badge variant={p.category === "Cold Chain" ? "cyan" : "neutral"}>

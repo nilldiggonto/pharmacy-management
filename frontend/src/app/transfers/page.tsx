@@ -21,6 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { MedicineVisual } from "@/components/ui/medicine-visual";
 import { useApp } from "@/context/app-context";
 import type { Transfer } from "@/types/api";
 import { formatTimeAgo } from "@/lib/utils";
@@ -28,6 +29,9 @@ import { formatTimeAgo } from "@/lib/utils";
 export default function TransfersPage() {
   const {
     user,
+    isGlobalRole,
+    allowedLocations,
+    activeBranchId,
     transfers,
     locations,
     products,
@@ -38,18 +42,35 @@ export default function TransfersPage() {
   } = useApp();
 
   const stockLocations = useMemo(() => locations.filter((l) => l.holds_stock), [locations]);
+  const allowedDestinationLocations = useMemo(
+    () => (isGlobalRole ? stockLocations : allowedLocations),
+    [isGlobalRole, stockLocations, allowedLocations]
+  );
+  const allowedLocationIdSet = useMemo(
+    () => new Set(allowedLocations.map((l) => l.id)),
+    [allowedLocations]
+  );
   const hubLoc = useMemo(
     () => stockLocations.find((l) => l.code === "WH-01") ?? stockLocations[0],
     [stockLocations]
   );
-  const firstBranch = useMemo(
-    () => stockLocations.find((l) => l.location_type === "branch") ?? stockLocations[1],
-    [stockLocations]
+  const firstDest = useMemo(
+    () =>
+      allowedDestinationLocations.find((l) => l.id === activeBranchId) ??
+      allowedDestinationLocations.find((l) => l.location_type === "branch") ??
+      allowedDestinationLocations[0],
+    [allowedDestinationLocations, activeBranchId]
   );
 
   const [createOpen, setCreateOpen] = useState(false);
   const [fromId, setFromId] = useState<number>(hubLoc?.id ?? 2);
-  const [toId, setToId] = useState<number>(firstBranch?.id ?? 3);
+  const [toId, setToId] = useState<number>(firstDest?.id ?? 3);
+
+  React.useEffect(() => {
+    if (firstDest && !allowedDestinationLocations.some((l) => l.id === toId)) {
+      setToId(firstDest.id);
+    }
+  }, [firstDest, allowedDestinationLocations, toId]);
   const [productId, setProductId] = useState<number>(products[0]?.id ?? 1);
   const [qty, setQty] = useState("40");
   const [reason, setReason] = useState("Branch replenishment from Uttara Main Hub");
@@ -153,13 +174,15 @@ export default function TransfersPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="caption-4 font-medium text-[#1C1917] block mb-1">To Destination</label>
+                    <label className="caption-4 font-medium text-[#1C1917] block mb-1">
+                      To Destination {!isGlobalRole ? "(Your Branch)" : ""}
+                    </label>
                     <select
                       value={toId}
                       onChange={(e) => setToId(Number(e.target.value))}
                       className="h-9 w-full rounded-lg border border-[#DDD2C2] bg-[#FFFFFF] px-2.5 body-6 text-[#1C1917]"
                     >
-                      {stockLocations.map((l) => (
+                      {allowedDestinationLocations.map((l) => (
                         <option key={l.id} value={l.id}>
                           {l.code} · {l.name}
                         </option>
@@ -270,12 +293,22 @@ export default function TransfersPage() {
                       return (
                         <div
                           key={item.id}
-                          className="flex items-center justify-between rounded-xl border border-[#EAE2D6] bg-[#FAF6F0] px-3 py-2"
+                          className="flex items-center justify-between gap-2 rounded-xl border border-[#EAE2D6] bg-[#FAF6F0] px-3 py-2"
                         >
-                          <span className="body-6 font-medium text-[#1C1917]">
-                            {prod?.name ?? `Product #${item.product_id}`}
-                          </span>
-                          <div className="text-right font-mono caption-4">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <MedicineVisual
+                              sku={prod?.sku}
+                              name={prod?.name}
+                              category={prod?.category}
+                              dosageForm={prod?.dosage_form}
+                              requiresPrescription={prod?.requires_prescription}
+                              size="sm"
+                            />
+                            <span className="truncate body-6 font-medium text-[#1C1917]">
+                              {prod?.name ?? `Product #${item.product_id}`}
+                            </span>
+                          </div>
+                          <div className="text-right font-mono caption-4 shrink-0">
                             <span className="text-[#1C1917] font-semibold">
                               {item.dispatched_quantity || item.requested_quantity} units
                             </span>
@@ -313,7 +346,9 @@ export default function TransfersPage() {
                     </Button>
                   )}
 
-                  {isApproved && canDispatchOrReceive && (
+                  {isApproved &&
+                    canDispatchOrReceive &&
+                    (isGlobalRole || allowedLocationIdSet.has(trf.from_location_id)) && (
                     <Button
                       variant="primary"
                       size="sm"
@@ -333,7 +368,9 @@ export default function TransfersPage() {
                     </Button>
                   )}
 
-                  {isDispatched && canDispatchOrReceive && (
+                  {isDispatched &&
+                    canDispatchOrReceive &&
+                    (isGlobalRole || allowedLocationIdSet.has(trf.to_location_id)) && (
                     <Button
                       variant="primary"
                       size="sm"

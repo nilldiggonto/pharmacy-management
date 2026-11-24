@@ -25,14 +25,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { MedicineVisual } from "@/components/ui/medicine-visual";
 import { SlidingTabs } from "@/components/ui/sliding-tabs";
 import { useApp } from "@/context/app-context";
 import type { Product, Sale } from "@/types/api";
-import { formatCurrency, formatNumber, formatTimeAgo } from "@/lib/utils";
+import { formatCurrency, formatTimeAgo } from "@/lib/utils";
 
 export default function PosPage() {
   const {
     user,
+    isGlobalRole,
+    allowedLocations,
+    activeBranchId,
+    setActiveBranchId,
     products,
     locations,
     networkStock,
@@ -46,8 +51,11 @@ export default function PosPage() {
 
   const stockLocations = useMemo(() => locations.filter((l) => l.holds_stock), [locations]);
   const branchLocations = useMemo(
-    () => stockLocations.filter((l) => l.location_type === "branch"),
-    [stockLocations]
+    () =>
+      (isGlobalRole ? stockLocations : allowedLocations).filter(
+        (l) => l.location_type === "branch"
+      ),
+    [isGlobalRole, stockLocations, allowedLocations]
   );
   const hubLocation = useMemo(
     () =>
@@ -61,7 +69,12 @@ export default function PosPage() {
     user && ["owner", "head_office_manager", "branch_manager"].includes(user.role);
 
   const [tab, setTab] = useState("retail");
-  const [locationId, setLocationId] = useState<number>(branchLocations[0]?.id ?? stockLocations[0]?.id ?? 3);
+  const locationId =
+    branchLocations.find((b) => b.id === activeBranchId)?.id ??
+    branchLocations[0]?.id ??
+    stockLocations[0]?.id ??
+    3;
+  const setLocationId = (id: number) => setActiveBranchId(id);
   const [query, setQuery] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -347,20 +360,24 @@ export default function PosPage() {
                       }`}
                     >
                       <div>
+                        <MedicineVisual
+                          sku={p.sku}
+                          name={p.name}
+                          category={p.category}
+                          dosageForm={p.dosage_form}
+                          requiresPrescription={p.requires_prescription}
+                          size="lg"
+                          className="mb-2.5"
+                        />
                         <div className="flex items-center justify-between gap-2">
                           <span className="font-mono caption-5 font-semibold text-[#B91C1C]">
                             {p.sku}
                           </span>
-                          <div className="flex items-center gap-1.5">
-                            <Badge variant={p.requires_prescription ? "amber" : "neutral"}>
-                              {p.requires_prescription ? "Rx" : "OTC"}
-                            </Badge>
-                            <Badge variant={outHere ? "crimson" : localAvail < p.min_stock_level ? "amber" : "emerald"}>
-                              {outHere ? "0 here" : `${localAvail} avail`}
-                            </Badge>
-                          </div>
+                          <Badge variant={outHere ? "crimson" : localAvail < p.min_stock_level ? "amber" : "emerald"}>
+                            {outHere ? "0 here" : `${localAvail} avail`}
+                          </Badge>
                         </div>
-                        <p className="mt-1.5 body-5 font-semibold text-[#1C1917]">{p.name}</p>
+                        <p className="mt-1 body-5 font-semibold text-[#1C1917]">{p.name}</p>
                         <p className="caption-5 text-[#57534E]">{p.generic_name}</p>
                       </div>
 

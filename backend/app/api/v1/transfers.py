@@ -64,15 +64,12 @@ async def create_transfer_request(
             detail="Source and destination locations must be different",
         )
 
-    # Branch managers can request stock to their assigned branch
+    # Branch-scoped staff can only request stock INTO their own assigned branch
     if not current_user.can_access_all_locations and current_user.role != UserRole.OWNER:
-        if (
-            payload.to_location_id not in current_user.location_ids
-            and payload.from_location_id not in current_user.location_ids
-        ):
+        if payload.to_location_id not in current_user.location_ids:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You must have access to the source or destination location",
+                detail="Branch staff can only request stock for their own assigned branch",
             )
 
     locs = (

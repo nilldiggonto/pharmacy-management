@@ -78,6 +78,10 @@ interface AppContextValue {
   setSimulationRunning: (running: boolean) => void;
   selectedLocationCode: string | null;
   setSelectedLocationCode: (code: string | null) => void;
+  isGlobalRole: boolean;
+  allowedLocations: Location[];
+  activeBranchId: number | null;
+  setActiveBranchId: (id: number) => void;
   signIn: (email: string, password: string) => Promise<{ ok: boolean; user?: User; error?: string }>;
   signInAsRolePreview: (role: UserRole) => User;
   signOut: () => Promise<void>;
@@ -211,8 +215,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [liveFlows, setLiveFlows] = useState<LiveFlowEvent[]>(INITIAL_LIVE_FLOWS);
   const [simulationRunning, setSimulationRunning] = useState(true);
   const [selectedLocationCode, setSelectedLocationCode] = useState<string | null>("WH-01");
+  const [activeBranchId, setActiveBranchId] = useState<number | null>(null);
 
   const isAuthenticated = user !== null && mode !== "unauthenticated";
+  const isGlobalRole = Boolean(
+    user && (user.role === "owner" || user.can_access_all_locations)
+  );
+  const allowedLocations = React.useMemo(() => {
+    const stockLocs = locations.filter((l) => l.holds_stock);
+    if (!user) return [];
+    if (isGlobalRole) return stockLocs;
+    return stockLocs.filter((l) => user.location_ids.includes(l.id));
+  }, [locations, user, isGlobalRole]);
+
+  useEffect(() => {
+    if (allowedLocations.length === 0) return;
+    if (activeBranchId === null || !allowedLocations.some((l) => l.id === activeBranchId)) {
+      const preferred =
+        allowedLocations.find((l) => l.location_type === "branch") ?? allowedLocations[0];
+      setActiveBranchId(preferred.id);
+    }
+  }, [allowedLocations, activeBranchId]);
 
   const showToast = useCallback((toast: LiveToast) => {
     setLiveToast(toast);
@@ -800,6 +823,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setSimulationRunning,
         selectedLocationCode,
         setSelectedLocationCode,
+        isGlobalRole,
+        allowedLocations,
+        activeBranchId,
+        setActiveBranchId,
         signIn,
         signInAsRolePreview,
         signOut,

@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { MedicineVisual } from "@/components/ui/medicine-visual";
 import { SlidingTabs } from "@/components/ui/sliding-tabs";
 import { useApp } from "@/context/app-context";
 import { daysUntil, formatCurrency, formatNumber, formatTimeAgo } from "@/lib/utils";
@@ -28,6 +29,8 @@ import { daysUntil, formatCurrency, formatNumber, formatTimeAgo } from "@/lib/ut
 export default function InventoryPage() {
   const {
     user,
+    isGlobalRole,
+    allowedLocations,
     batches,
     networkStock,
     adjustments,
@@ -40,6 +43,11 @@ export default function InventoryPage() {
     approveStockAdjustment,
     rejectStockAdjustment,
   } = useApp();
+
+  const allowedLocationIds = useMemo(
+    () => new Set(allowedLocations.map((l) => l.id)),
+    [allowedLocations]
+  );
 
   const [tab, setTab] = useState("finder");
   const [query, setQuery] = useState("");
@@ -251,22 +259,31 @@ export default function InventoryPage() {
                         key={item.product_id}
                         className="rounded-2xl border border-[#E7DDD0] bg-[#FAF6F0]/60 p-4"
                       >
-                        <div className="flex flex-wrap items-start justify-between gap-2 pb-3 border-b border-[#EAE2D6]">
-                          <div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-mono caption-3 font-semibold text-[#B91C1C]">
-                                {item.sku}
-                              </span>
-                              <Badge variant={item.requires_prescription ? "amber" : "emerald"}>
-                                {item.requires_prescription ? "Rx Only" : "OTC"}
-                              </Badge>
-                              <Badge variant="neutral">{item.category}</Badge>
+                        <div className="flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-[#EAE2D6]">
+                          <div className="flex items-start gap-3">
+                            <MedicineVisual
+                              sku={item.sku}
+                              name={item.name}
+                              category={item.category}
+                              requiresPrescription={item.requires_prescription}
+                              size="md"
+                            />
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-mono caption-3 font-semibold text-[#B91C1C]">
+                                  {item.sku}
+                                </span>
+                                <Badge variant={item.requires_prescription ? "amber" : "emerald"}>
+                                  {item.requires_prescription ? "Rx Only" : "OTC"}
+                                </Badge>
+                                <Badge variant="neutral">{item.category}</Badge>
+                              </div>
+                              <h3 className="mt-1 title-3 text-[#1C1917]">{item.name}</h3>
+                              <p className="caption-5 text-[#57534E]">
+                                {item.generic_name} · Retail {formatCurrency(item.retail_price)} · Wholesale{" "}
+                                {formatCurrency(item.wholesale_price)}
+                              </p>
                             </div>
-                            <h3 className="mt-1 title-3 text-[#1C1917]">{item.name}</h3>
-                            <p className="caption-5 text-[#57534E]">
-                              {item.generic_name} · Retail {formatCurrency(item.retail_price)} · Wholesale{" "}
-                              {formatCurrency(item.wholesale_price)}
-                            </p>
                           </div>
                           <div className="text-right">
                             <p className="caption-5 text-[#78716C]">Total Network Stock</p>
@@ -281,6 +298,7 @@ export default function InventoryPage() {
                             const isHub = loc.location_code === "WH-01" || loc.location_type === "central_warehouse";
                             const isOut = loc.available_quantity === 0;
                             const isLow = loc.available_quantity > 0 && loc.available_quantity < item.min_stock_level;
+                            const canActOnBranch = isGlobalRole || allowedLocationIds.has(loc.location_id);
                             return (
                               <div
                                 key={loc.location_id}
@@ -295,7 +313,8 @@ export default function InventoryPage() {
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="min-w-0">
                                     <span className="font-mono caption-5 font-semibold text-[#991B1B]">
-                                      {loc.location_code} {isHub ? "(MAIN HUB)" : ""}
+                                      {loc.location_code}{" "}
+                                      {isHub ? "(MAIN HUB)" : !isGlobalRole && canActOnBranch ? "(MY BRANCH)" : ""}
                                     </span>
                                     <p className="truncate caption-4 font-medium text-[#1C1917]">
                                       {loc.location_name}
@@ -308,7 +327,7 @@ export default function InventoryPage() {
                                   </Badge>
                                 </div>
 
-                                {!isHub && (isOut || isLow) && canRequestTransfer && hubLocation && (hubEntry?.available_quantity ?? 0) > 0 && (
+                                {!isHub && (isOut || isLow) && canRequestTransfer && canActOnBranch && hubLocation && (hubEntry?.available_quantity ?? 0) > 0 && (
                                   <Button
                                     size="sm"
                                     variant="primary"
@@ -328,7 +347,7 @@ export default function InventoryPage() {
                                     }}
                                   >
                                     <ArrowsLeftRight size={13} weight="bold" />
-                                    <span>Request from Uttara</span>
+                                    <span>Request for {loc.location_code}</span>
                                   </Button>
                                 )}
                               </div>

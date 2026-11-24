@@ -21,6 +21,7 @@ import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MedicineVisual } from "@/components/ui/medicine-visual";
 import { useApp } from "@/context/app-context";
 import { canAccessRoute, ROLE_DIRECTORY } from "@/lib/rbac";
 import { formatCurrency, formatNumber, formatTimeAgo, WEIGHTED_EASE } from "@/lib/utils";
@@ -28,10 +29,12 @@ import { formatCurrency, formatNumber, formatTimeAgo, WEIGHTED_EASE } from "@/li
 export default function DashboardPage() {
   const {
     user,
+    isGlobalRole,
     dashboard,
     locations,
     batches,
     products,
+    transfers,
     lowStock,
     expiryAlerts,
     liveFlows,
@@ -39,6 +42,9 @@ export default function DashboardPage() {
     setSelectedLocationCode,
     simulationRunning,
     setSimulationRunning,
+    approveTransferRequest,
+    triggerTransferDispatch,
+    receiveTransferShipment,
   } = useApp();
 
   const selectedLocation = useMemo(
@@ -177,10 +183,35 @@ export default function DashboardPage() {
               lowStock={lowStock}
               expiryAlerts={expiryAlerts}
               liveFlows={liveFlows}
+              transfers={transfers}
+              products={products}
               selectedCode={selectedLocation?.code ?? null}
               onSelectCode={(code) => setSelectedLocationCode(code)}
               simulationRunning={simulationRunning}
               onToggleSimulation={() => setSimulationRunning(!simulationRunning)}
+              canApprove={Boolean(user && ["owner", "head_office_manager"].includes(user.role))}
+              canDispatchOrReceive={Boolean(
+                user &&
+                  [
+                    "owner",
+                    "head_office_manager",
+                    "inventory_officer",
+                    "branch_manager",
+                    "pharmacist",
+                  ].includes(user.role)
+              )}
+              allowedLocationIds={user?.location_ids ?? []}
+              isGlobalRole={isGlobalRole}
+              onApproveTransfer={approveTransferRequest}
+              onDispatchTransfer={triggerTransferDispatch}
+              onQuickReceiveTransfer={async (trf) => {
+                await receiveTransferShipment(trf.id, {
+                  items: trf.items.map((it) => ({
+                    transferItemId: it.id,
+                    receivedQuantity: it.dispatched_quantity || it.requested_quantity,
+                  })),
+                });
+              }}
             />
           </div>
 
@@ -241,13 +272,23 @@ export default function DashboardPage() {
                             key={b.id}
                             className="flex items-center justify-between gap-2 rounded-xl border border-[#EAE2D6] bg-[#FAF6F0]/70 px-3 py-2"
                           >
-                            <div className="min-w-0">
-                              <p className="truncate body-5 font-medium text-[#1C1917]">
-                                {prod?.name ?? `Product #${b.product_id}`}
-                              </p>
-                              <p className="font-mono caption-5 text-[#78716C]">
-                                {b.batch_number} · Exp {b.expiry_date}
-                              </p>
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <MedicineVisual
+                                sku={prod?.sku}
+                                name={prod?.name}
+                                category={prod?.category}
+                                dosageForm={prod?.dosage_form}
+                                requiresPrescription={prod?.requires_prescription}
+                                size="sm"
+                              />
+                              <div className="min-w-0">
+                                <p className="truncate body-5 font-medium text-[#1C1917]">
+                                  {prod?.name ?? `Product #${b.product_id}`}
+                                </p>
+                                <p className="font-mono caption-5 text-[#78716C]">
+                                  {b.batch_number} · Exp {b.expiry_date}
+                                </p>
+                              </div>
                             </div>
                             <div className="text-right">
                               <p className="font-mono caption-3 font-semibold text-[#1C1917]">

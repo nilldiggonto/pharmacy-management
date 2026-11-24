@@ -39,7 +39,20 @@ const NAV_ITEMS: { href: AppRoute; label: string; icon: React.ElementType }[] = 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, mode, sseConnected, liveToast, dismissToast, isAuthenticated, authChecked, signOut } = useApp();
+  const {
+    user,
+    mode,
+    sseConnected,
+    liveToast,
+    dismissToast,
+    isAuthenticated,
+    authChecked,
+    isGlobalRole,
+    allowedLocations,
+    activeBranchId,
+    setActiveBranchId,
+    signOut,
+  } = useApp();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -124,6 +137,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2">
+            {!isGlobalRole && allowedLocations.length > 0 && (
+              <div className="hidden xl:flex items-center gap-1.5 rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-2.5 py-1">
+                <span className="caption-5 font-semibold text-[#991B1B] uppercase">My Branch:</span>
+                {allowedLocations.length === 1 ? (
+                  <span className="caption-4 font-semibold text-[#1C1917]">
+                    {allowedLocations[0].code} · {allowedLocations[0].name}
+                  </span>
+                ) : (
+                  <select
+                    aria-label="Active assigned branch"
+                    value={activeBranchId ?? allowedLocations[0].id}
+                    onChange={(e) => setActiveBranchId(Number(e.target.value))}
+                    className="bg-transparent caption-4 font-semibold text-[#1C1917] focus:outline-none cursor-pointer"
+                  >
+                    {allowedLocations.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.code} · {loc.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
+
             <Badge
               variant={mode === "live_api" ? (sseConnected ? "emerald" : "amber") : "crimson"}
               pulse={mode === "live_api"}
