@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Lexend } from "next/font/google";
 import { AppProvider } from "@/context/app-context";
+import { PublicCartProvider } from "@/context/public-cart-context";
 import "./globals.css";
 
 const lexend = Lexend({
@@ -18,9 +19,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MedGrid Pharmacy | Authentic Medicines & Multi Branch Operations",
+  title: "MedGrid Pharmacy | Dhaka 8 Branch Network & Verified Medicine Care",
   description:
-    "Seven retail pharmacy branches and one temperature controlled central warehouse with complete batch traceability.",
+    "Eight retail pharmacy branches across Dhaka connected to one temperature controlled central warehouse with complete batch traceability.",
 };
 
 export default function RootLayout({
@@ -37,7 +38,9 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        <AppProvider>{children}</AppProvider>
+        <AppProvider>
+          <PublicCartProvider>{children}</PublicCartProvider>
+        </AppProvider>
       </body>
     </html>
   );

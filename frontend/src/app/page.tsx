@@ -8,28 +8,19 @@ import {
   CaretDown,
   CheckCircle,
   Clock,
-  FirstAidKit,
-  List,
+  LockSimple,
   MapPin,
-  Package,
+  Plus,
   ShieldCheck,
   Snowflake,
   Truck,
-  X,
 } from "@phosphor-icons/react";
-import { useApp } from "@/context/app-context";
-import { getDefaultRouteForRole } from "@/lib/rbac";
-import { WEIGHTED_EASE } from "@/lib/utils";
-
-const PUBLIC_BRANCHES = [
-  { name: "Dhanmondi Care Branch", address: "Road 27, Dhanmondi, Dhaka", hours: "08:00 AM to 11:00 PM", phone: "+880 1711 100201" },
-  { name: "Banani North Branch", address: "Road 11, Banani, Dhaka", hours: "08:00 AM to 11:00 PM", phone: "+880 1711 100202" },
-  { name: "Uttara Sector 7 Branch", address: "Lake Drive Road, Uttara", hours: "08:00 AM to 10:30 PM", phone: "+880 1711 100203" },
-  { name: "Mirpur 10 Plaza Branch", address: "Begum Rokeya Sarani, Mirpur", hours: "08:00 AM to 11:00 PM", phone: "+880 1711 100204" },
-  { name: "Bashundhara Gate Branch", address: "Block C, Bashundhara R/A", hours: "08:00 AM to 11:00 PM", phone: "+880 1711 100205" },
-  { name: "Motijheel Commercial Branch", address: "Dilkusha Commercial Area", hours: "08:30 AM to 10:00 PM", phone: "+880 1711 100206" },
-  { name: "Chittagong Agrabad Branch", address: "Sk. Mujib Road, Agrabad", hours: "08:00 AM to 10:30 PM", phone: "+880 1711 100207" },
-];
+import { PublicHeader } from "@/components/public/public-header";
+import { HeroCapsuleScene } from "@/components/public/hero-capsule-scene";
+import { BangladeshDhakaMap3D } from "@/components/public/bangladesh-dhaka-map-3d";
+import { usePublicCart } from "@/context/public-cart-context";
+import { DHAKA_BRANCHES, PUBLIC_PRODUCTS, type PublicBranch } from "@/lib/public-catalog";
+import { formatCurrency, WEIGHTED_EASE } from "@/lib/utils";
 
 const BENEFITS = [
   {
@@ -40,67 +31,41 @@ const BENEFITS = [
   {
     icon: Snowflake,
     title: "Continuous cold chain control",
-    detail: "Insulin, biologics, and temperature sensitive therapies travel from our central chiller to every branch under monitored storage.",
+    detail: "Insulin and biologics travel from our central Tejgaon chiller to all eight Dhaka branches under continuous thermal logging.",
   },
   {
     icon: Clock,
     title: "Strict expiry protection",
-    detail: "Automated batch sequencing prevents near expiry or recalled stock from ever reaching a retail counter or wholesale pallet.",
+    detail: "Automated FEFO sequencing ensures near expiry or quarantined stock never reaches a patient counter.",
   },
   {
     icon: Truck,
-    title: "Dependable pharmacy wholesale",
-    detail: "Approved partner pharmacies receive transparent contract pricing, batch invoices, and scheduled replenishment deliveries.",
-  },
-];
-
-const STEPS = [
-  {
-    step: "01",
-    title: "Central warehouse intake",
-    detail: "Every shipment is inspected on arrival with batch numbers, expiry dates, and manufacturer invoices verified before storage.",
-  },
-  {
-    step: "02",
-    title: "Controlled branch dispatch",
-    detail: "Seven retail branches replenish from central stock using tracked transfers so essential medicines stay available every day.",
-  },
-  {
-    step: "03",
-    title: "Licensed pharmacist dispensing",
-    detail: "Patients and wholesale pharmacy partners receive accurate, authentic medicines backed by complete batch traceability.",
+    title: "Licensed pharmacy wholesale",
+    detail: "Approved partner pharmacies receive verified contract pricing, batch invoices, and scheduled replenishment.",
   },
 ];
 
 const FAQS = [
   {
-    q: "How do I verify that medicines from MedGrid are authentic?",
-    a: "Every unit dispensed across our seven branches is received from licensed pharmaceutical manufacturers into our central warehouse with recorded batch numbers and expiry dates.",
+    q: "Which medicines can I buy online?",
+    a: "Approved over the counter essentials like paracetamol, oral rehydration salts, allergy relief, and daily vitamins can be reserved online with per order safety limits. Prescription medicines require in person pharmacist verification.",
   },
   {
-    q: "Can independent pharmacies apply for wholesale supply?",
-    a: "Yes. Licensed retail pharmacies can submit a wholesale enquiry with their drug license and business registration for head office verification.",
+    q: "Where are your Dhaka branches located?",
+    a: "We operate eight retail branches across Dhaka: Uttara, Mirpur, Bashundhara, Gulshan, Banani, Mohammadpur, Dhanmondi, and Motijheel.",
   },
   {
-    q: "Are cold chain products like insulin available at all seven branches?",
-    a: "Yes. All seven retail locations maintain dedicated medical refrigeration units replenished from our central cold chain bay.",
+    q: "Do you show live warehouse stock quantities publicly?",
+    a: "No. To protect supply integrity, public pages show general branch availability while exact batch counts remain inside the staff portal.",
   },
   {
-    q: "Do you dispense prescription only medicines without a valid prescription?",
-    a: "No. Prescription medicines require a valid prescription verified by a licensed pharmacist at the dispensing counter.",
-  },
-  {
-    q: "How do staff members access the internal operations portal?",
-    a: "Authorized staff sign in through the Staff Portal button using their role credentials. Access is restricted by role and assigned branch.",
-  },
-  {
-    q: "What are the daily operating hours across branches?",
-    a: "Most branches operate from 08:00 AM to 11:00 PM seven days a week. Exact branch timings are listed in the branch directory above.",
+    q: "How can an external pharmacy apply for wholesale supply?",
+    a: "Submit your pharmacy name and work email in the wholesale enquiry form below. Our head office reviews drug licenses before activating wholesale access.",
   },
 ];
 
 const TAGLINE_WORDS =
-  "Every medicine batch tracked from licensed manufacturer to patient counter across seven branches with zero guesswork.".split(
+  "Every medicine batch verified from licensed manufacturer to patient counter across eight Dhaka branches with zero guesswork.".split(
     " "
   );
 
@@ -123,10 +88,7 @@ function TaglineRevealSection() {
       if (!el) return;
       const rect = el.getBoundingClientRect();
       const vh = window.innerHeight || 800;
-      const progress = Math.max(
-        0,
-        Math.min(1, (vh * 0.85 - rect.top) / (vh * 0.55))
-      );
+      const progress = Math.max(0, Math.min(1, (vh * 0.85 - rect.top) / (vh * 0.55)));
       setRevealedCount(Math.round(progress * TAGLINE_WORDS.length));
     };
 
@@ -147,9 +109,9 @@ function TaglineRevealSection() {
     <section
       ref={sectionRef}
       aria-label="Core promise"
-      className="mx-auto max-w-[1200px] px-4 py-20 sm:px-6"
+      className="mx-auto max-w-[1140px] px-4 py-16 sm:px-6"
     >
-      <div className="rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-8 sm:p-16">
+      <div className="rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-8 sm:p-14">
         <p className="caption-3 uppercase tracking-widest text-[#ff1f7a]">
           Traceable Care
         </p>
@@ -173,15 +135,25 @@ function TaglineRevealSection() {
 }
 
 export default function PublicLandingPage() {
-  const { isAuthenticated, user } = useApp();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { addItem, setDrawerOpen } = usePublicCart();
+  const [selectedBranch, setSelectedBranch] = useState<PublicBranch>(DHAKA_BRANCHES[3]); // Gulshan
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [toast, setToast] = useState<string | null>(null);
   const [enquirySubmitted, setEnquirySubmitted] = useState(false);
   const [pharmacyName, setPharmacyName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
 
-  const portalHref =
-    isAuthenticated && user ? getDefaultRouteForRole(user.role) : "/login";
+  const featuredProducts = PUBLIC_PRODUCTS.slice(0, 6);
+
+  const handleQuickAdd = (product: (typeof PUBLIC_PRODUCTS)[number]) => {
+    const res = addItem(product);
+    if (res.ok) {
+      setToast(`${product.name} added to bag.`);
+      setDrawerOpen(true);
+    } else if (res.message) {
+      setToast(res.message);
+    }
+  };
 
   const handleEnquiry = (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,219 +165,66 @@ export default function PublicLandingPage() {
 
   return (
     <div className="min-h-screen bg-[#ffffff] text-[#0a0a0a]">
-      {/* Floating compact top navigation (B7) */}
-      <header className="sticky top-0 z-40 px-4 pt-4">
-        <div className="mx-auto flex max-w-[1040px] items-center justify-between gap-4 rounded-2xl border border-[#e5e5e5] bg-[#ffffff]/85 px-4 py-2.5 backdrop-blur-md">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#ff1f7a] text-[#ffffff]">
-              <FirstAidKit size={18} weight="fill" />
-            </span>
-            <span className="title-3 text-[#0a0a0a] tracking-tight">
-              MedGrid Pharmacy
-            </span>
-          </Link>
-
-          <nav aria-label="Public navigation" className="hidden md:flex items-center gap-6">
-            <a href="#benefits" className="title-4 text-[#525252] hover:text-[#0a0a0a] transition-colors duration-300">
-              Standards
-            </a>
-            <a href="#branches" className="title-4 text-[#525252] hover:text-[#0a0a0a] transition-colors duration-300">
-              Branches
-            </a>
-            <a href="#wholesale" className="title-4 text-[#525252] hover:text-[#0a0a0a] transition-colors duration-300">
-              Wholesale
-            </a>
-            <a href="#faq" className="title-4 text-[#525252] hover:text-[#0a0a0a] transition-colors duration-300">
-              FAQ
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <Link
-              href={portalHref}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#ff1f7a] px-3 py-2 button-sm text-[#ffffff] transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[#e11d74] active:scale-[0.98]"
-            >
-              <span>{isAuthenticated ? "Open Portal" : "Staff Login"}</span>
-              <ArrowRight size={15} weight="bold" />
-            </Link>
-
-            <button
-              type="button"
-              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-              onClick={() => setMobileMenuOpen((v) => !v)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e5e5] bg-[#fafafa] text-[#0a0a0a] md:hidden cursor-pointer"
-            >
-              {mobileMenuOpen ? <X size={18} /> : <List size={18} />}
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Full height mobile drawer (B7) */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3, ease: WEIGHTED_EASE }}
-            className="fixed inset-0 z-50 flex flex-col bg-[#ffffff]/95 p-6 backdrop-blur-xl md:hidden"
-          >
-            <div className="flex items-center justify-between">
-              <span className="title-2 text-[#0a0a0a]">MedGrid Pharmacy</span>
-              <button
-                type="button"
-                aria-label="Close menu"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5e5e5]"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <nav className="mt-8 flex flex-col gap-3">
-              {[
-                { href: "#benefits", label: "Quality Standards" },
-                { href: "#branches", label: "Seven Branches" },
-                { href: "#wholesale", label: "Wholesale Supply" },
-                { href: "#faq", label: "Common Questions" },
-              ].map((item, idx) => (
-                <motion.a
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  initial={{ opacity: 0, y: 24 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.06, duration: 0.45, ease: WEIGHTED_EASE }}
-                  className="rounded-xl border border-[#e5e5e5] bg-[#fafafa] px-4 py-3 title-3 text-[#0a0a0a]"
-                >
-                  {item.label}
-                </motion.a>
-              ))}
-            </nav>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <PublicHeader />
 
       <main id="main-content">
-        {/* Hero Section */}
-        <section className="mx-auto max-w-[1200px] px-4 pt-12 pb-16 sm:px-6 sm:pt-20">
-          <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
+        {/* Hero Section with Interactive 3D Capsule Scene */}
+        <section className="mx-auto max-w-[1140px] px-4 pt-10 pb-14 sm:px-6 sm:pt-16">
+          <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12">
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.65, ease: WEIGHTED_EASE }}
-              className="lg:col-span-7"
+              className="lg:col-span-6"
             >
               <div className="inline-flex items-center gap-2 rounded-full border border-[#ff1f7a]/25 bg-[#fff0f6] px-3 py-1 caption-4 text-[#be125c]">
                 <span className="h-2 w-2 rounded-full bg-[#ff1f7a]" />
-                <span>Seven retail branches and central cold chain distribution</span>
+                <span>Dhaka 8 branch network & verified OTC shop</span>
               </div>
 
-              <h1 className="mt-6 max-w-[680px] heading-2 sm:heading-1 bg-gradient-to-r from-[#000000] to-[#666666] bg-clip-text text-transparent">
-                Authentic medicines
+              <h1 className="mt-5 max-w-[680px] heading-2 sm:heading-1 bg-gradient-to-r from-[#000000] to-[#666666] bg-clip-text text-transparent">
+                Clinical pharmacy care
                 <br />
-                delivered with clinical precision.
+                engineered for Dhaka.
               </h1>
 
               <p className="mt-5 max-w-[680px] body-3 text-[#525252]">
-                MedGrid connects one temperature controlled central warehouse with seven neighborhood pharmacy branches and licensed wholesale partners. Every dispensed pack is batch verified and expiry protected.
+                Reserve approved everyday medicines online with safe household limits, or visit any of our eight licensed Dhaka branches backed by one temperature controlled central warehouse.
               </p>
 
-              <div className="mt-8 flex flex-wrap items-center gap-4">
+              <div className="mt-7 flex flex-wrap items-center gap-3">
                 <Link
-                  href={portalHref}
+                  href="/shop"
                   className="inline-flex items-center gap-2 rounded-lg bg-[#ff1f7a] px-4 py-2.5 button-md text-[#ffffff] transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[#e11d74] active:scale-[0.98]"
                 >
-                  <span>{isAuthenticated ? "Enter Operations Workspace" : "Sign in to Staff Portal"}</span>
+                  <span>Shop OTC Medicines</span>
                   <ArrowRight size={17} weight="bold" />
                 </Link>
               </div>
 
               <div className="mt-8 flex flex-wrap items-center gap-6 border-t border-[#e5e5e5] pt-6">
                 <div>
-                  <p className="font-mono heading-5 text-[#0a0a0a]">7</p>
-                  <p className="caption-4 text-[#737373]">Retail branches</p>
-                </div>
-                <div>
-                  <p className="font-mono heading-5 text-[#0a0a0a]">2°C to 8°C</p>
-                  <p className="caption-4 text-[#737373]">Monitored cold chain</p>
+                  <p className="font-mono heading-5 text-[#0a0a0a]">8</p>
+                  <p className="caption-4 text-[#737373]">Dhaka branches</p>
                 </div>
                 <div>
                   <p className="font-mono heading-5 text-[#ff1f7a]">100%</p>
-                  <p className="caption-4 text-[#737373]">Batch verified stock</p>
+                  <p className="caption-4 text-[#737373]">Batch verified</p>
+                </div>
+                <div>
+                  <p className="font-mono heading-5 text-[#0a0a0a]">2°C to 8°C</p>
+                  <p className="caption-4 text-[#737373]">Cold chain hub</p>
                 </div>
               </div>
             </motion.div>
 
-            {/* Minimalist animated public network preview card */}
             <motion.div
-              initial={{ opacity: 0, y: 32 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.12, duration: 0.7, ease: WEIGHTED_EASE }}
-              className="lg:col-span-5"
+              transition={{ delay: 0.1, duration: 0.7, ease: WEIGHTED_EASE }}
+              className="lg:col-span-6"
             >
-              <div className="rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-6">
-                <div className="flex items-center justify-between">
-                  <span className="caption-3 uppercase tracking-wider text-[#737373]">
-                    Supply Chain Assurance
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#ff1f7a]/30 bg-[#fff0f6] px-2.5 py-0.5 caption-4 text-[#be125c]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#ff1f7a]" />
-                    Active Network
-                  </span>
-                </div>
-
-                <div className="mt-5 flex flex-col gap-3">
-                  {[
-                    {
-                      icon: Package,
-                      label: "Central Distribution Hub",
-                      meta: "Tejgaon Industrial Zone, Dhaka",
-                      tag: "Verified",
-                    },
-                    {
-                      icon: Snowflake,
-                      label: "Cold Chain Biologics Bay",
-                      meta: "Continuous thermal logging",
-                      tag: "4.1°C",
-                    },
-                    {
-                      icon: MapPin,
-                      label: "Seven Neighborhood Pharmacies",
-                      meta: "Dhaka & Chittagong daily care",
-                      tag: "Open",
-                    },
-                  ].map((item, i) => {
-                    const Icon = item.icon;
-                    return (
-                      <motion.div
-                        key={item.label}
-                        initial={{ opacity: 0, x: 16 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{
-                          delay: 0.25 + i * 0.1,
-                          duration: 0.5,
-                          ease: WEIGHTED_EASE,
-                        }}
-                        className="flex items-center justify-between gap-3 rounded-xl border border-[#e5e5e5] bg-[#ffffff] p-4"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#fff0f6] text-[#ff1f7a]">
-                            <Icon size={20} weight="duotone" />
-                          </span>
-                          <div>
-                            <p className="title-4 text-[#0a0a0a]">{item.label}</p>
-                            <p className="caption-5 text-[#737373]">{item.meta}</p>
-                          </div>
-                        </div>
-                        <span className="font-mono caption-4 text-[#ff1f7a]">
-                          {item.tag}
-                        </span>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
+              <HeroCapsuleScene />
             </motion.div>
           </div>
         </section>
@@ -413,28 +232,187 @@ export default function PublicLandingPage() {
         {/* Mandatory Tagline Reveal Section (B11) */}
         <TaglineRevealSection />
 
-        {/* Benefits Section */}
-        <section id="benefits" className="mx-auto max-w-[1200px] px-4 py-16 sm:px-6">
-          <div className="max-w-[680px]">
-            <p className="caption-3 uppercase tracking-widest text-[#ff1f7a]">
-              Quality Standards
-            </p>
-            <h2 className="mt-2 heading-4 text-[#0a0a0a]">
-              Built for safety at every dispensing counter
-            </h2>
+        {/* Public Limited OTC Medicine Shop Preview */}
+        <section className="mx-auto max-w-[1140px] px-4 py-14 sm:px-6">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="max-w-[680px]">
+              <p className="caption-3 uppercase tracking-widest text-[#ff1f7a]">
+                Public Medicine Store
+              </p>
+              <h2 className="mt-2 heading-4 text-[#0a0a0a]">
+                Approved everyday essentials you can reserve online
+              </h2>
+              <p className="mt-2 body-6 text-[#525252]">
+                Non prescription items carry household quantity caps for patient safety. Prescription medicines remain in branch only.
+              </p>
+            </div>
+            <Link
+              href="/shop"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#e5e5e5] bg-[#ffffff] px-3.5 py-2 button-sm text-[#0a0a0a] hover:border-[#ff1f7a] transition-colors duration-300"
+            >
+              <span>Full Catalogue</span>
+              <ArrowRight size={15} />
+            </Link>
           </div>
 
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {toast && (
+            <div className="mt-4 rounded-xl border border-[#ff1f7a]/30 bg-[#fff0f6] px-4 py-2.5 caption-4 text-[#be125c]">
+              {toast}
+            </div>
+          )}
+
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {featuredProducts.map((product, idx) => (
+              <motion.article
+                key={product.id}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ delay: idx * 0.05, duration: 0.55, ease: WEIGHTED_EASE }}
+                className="flex flex-col justify-between rounded-2xl border border-[#e5e5e5] bg-[#ffffff] p-5 transition-[border-color] duration-300 hover:border-[#ff1f7a]/50"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="rounded-full border border-[#e5e5e5] bg-[#fafafa] px-2.5 py-0.5 caption-5 text-[#525252]">
+                      {product.category}
+                    </span>
+                    <span className="font-mono caption-5 text-[#ff1f7a]">
+                      Max {product.maxOrderQty} / order
+                    </span>
+                  </div>
+                  <h3 className="mt-3 title-3 text-[#0a0a0a]">{product.name}</h3>
+                  <p className="mt-0.5 caption-4 text-[#737373]">
+                    {product.genericName} · {product.packLabel}
+                  </p>
+                  <p className="mt-2 body-6 text-[#525252]">{product.summary}</p>
+                </div>
+
+                <div className="mt-5 flex items-center justify-between border-t border-[#f0f0f0] pt-4">
+                  <div>
+                    <p className="font-mono title-2 text-[#0a0a0a]">
+                      {formatCurrency(product.price)}
+                    </p>
+                    <p className="caption-5 text-[#737373]">{product.availabilityLabel}</p>
+                  </div>
+                  {product.purchasableOnline ? (
+                    <button
+                      type="button"
+                      onClick={() => handleQuickAdd(product)}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#ff1f7a] px-3 py-2 button-xsm text-[#ffffff] transition-colors duration-300 hover:bg-[#e11d74] cursor-pointer"
+                    >
+                      <Plus size={14} weight="bold" />
+                      <span>Add</span>
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-2.5 py-1.5 caption-5 text-[#525252]">
+                      <LockSimple size={13} />
+                      Rx Only
+                    </span>
+                  )}
+                </div>
+              </motion.article>
+            ))}
+          </div>
+        </section>
+
+        {/* Interactive 3D Bangladesh & Dhaka 8-Branch Map Showcase */}
+        <section className="mx-auto max-w-[1140px] px-4 py-14 sm:px-6">
+          <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
+            <div className="max-w-[680px]">
+              <p className="caption-3 uppercase tracking-widest text-[#ff1f7a]">
+                Interactive 3D Network Map
+              </p>
+              <h2 className="mt-2 heading-4 text-[#0a0a0a]">
+                Eight branches across Dhaka connected in real time
+              </h2>
+            </div>
+            <Link
+              href="/branches"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#0a0a0a] px-3.5 py-2 button-sm text-[#ffffff] hover:bg-[#262626] transition-colors duration-300"
+            >
+              <span>Explore Full Branch Map</span>
+              <ArrowRight size={15} />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+            <div className="lg:col-span-8">
+              <BangladeshDhakaMap3D
+                selectedBranchId={selectedBranch.id}
+                onSelectBranch={(b) => setSelectedBranch(b)}
+              />
+            </div>
+
+            <div className="flex flex-col justify-between rounded-2xl border border-[#e5e5e5] bg-[#ffffff] p-6 lg:col-span-4">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="font-mono caption-3 text-[#ff1f7a]">{selectedBranch.code}</span>
+                  <span className="rounded-full bg-[#fff0f6] px-2.5 py-0.5 caption-5 text-[#be125c]">
+                    Dhaka Sector
+                  </span>
+                </div>
+                <h3 className="mt-2 heading-6 text-[#0a0a0a]">{selectedBranch.name}</h3>
+                <p className="mt-1.5 flex items-start gap-1.5 body-6 text-[#525252]">
+                  <MapPin size={16} weight="fill" className="shrink-0 mt-0.5 text-[#ff1f7a]" />
+                  <span>{selectedBranch.address}</span>
+                </p>
+
+                <div className="mt-4 rounded-xl border border-[#e5e5e5] bg-[#fafafa] p-3.5 flex flex-col gap-1.5">
+                  <div className="flex justify-between caption-4">
+                    <span className="text-[#737373]">Hours</span>
+                    <span className="text-[#0a0a0a]">{selectedBranch.hours}</span>
+                  </div>
+                  <div className="flex justify-between caption-4">
+                    <span className="text-[#737373]">Direct Line</span>
+                    <span className="font-mono text-[#0a0a0a]">{selectedBranch.phone}</span>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {selectedBranch.services.map((svc) => (
+                    <span
+                      key={svc}
+                      className="rounded-full border border-[#e5e5e5] bg-[#ffffff] px-2.5 py-1 caption-5 text-[#525252]"
+                    >
+                      {svc}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 gap-1.5 border-t border-[#f0f0f0] pt-4">
+                {DHAKA_BRANCHES.map((b) => (
+                  <button
+                    key={b.id}
+                    type="button"
+                    onClick={() => setSelectedBranch(b)}
+                    className={`rounded-lg border px-2.5 py-1.5 caption-4 text-left transition-colors duration-200 cursor-pointer ${
+                      b.id === selectedBranch.id
+                        ? "border-[#ff1f7a] bg-[#fff0f6] text-[#be125c]"
+                        : "border-[#e5e5e5] bg-[#fafafa] text-[#525252] hover:text-[#0a0a0a]"
+                    }`}
+                  >
+                    {b.area}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Quality Benefits */}
+        <section className="mx-auto max-w-[1140px] px-4 py-14 sm:px-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {BENEFITS.map((b, idx) => {
               const Icon = b.icon;
               return (
                 <motion.div
                   key={b.title}
-                  initial={{ opacity: 0, y: 32 }}
+                  initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-60px" }}
-                  transition={{ delay: idx * 0.08, duration: 0.65, ease: WEIGHTED_EASE }}
-                  className="rounded-2xl border border-[#e5e5e5] bg-[#ffffff] p-6 transition-[border-color] duration-300 hover:border-[#ff1f7a]/50"
+                  viewport={{ once: true, margin: "-40px" }}
+                  transition={{ delay: idx * 0.06, duration: 0.6, ease: WEIGHTED_EASE }}
+                  className="rounded-2xl border border-[#e5e5e5] bg-[#ffffff] p-6"
                 >
                   <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#fff0f6] text-[#ff1f7a]">
                     <Icon size={20} weight="duotone" />
@@ -447,83 +425,18 @@ export default function PublicLandingPage() {
           </div>
         </section>
 
-        {/* How It Works */}
-        <section className="mx-auto max-w-[1200px] px-4 py-16 sm:px-6">
-          <div className="rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-8 sm:p-12">
-            <p className="caption-3 uppercase tracking-widest text-[#ff1f7a]">
-              How Our Supply Works
-            </p>
-            <h2 className="mt-2 heading-4 text-[#0a0a0a]">
-              Three verified stages from manufacturer to patient
-            </h2>
-
-            <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
-              {STEPS.map((s, idx) => (
-                <motion.div
-                  key={s.step}
-                  initial={{ opacity: 0, y: 32 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-60px" }}
-                  transition={{ delay: idx * 0.1, duration: 0.65, ease: WEIGHTED_EASE }}
-                  className="rounded-xl border border-[#e5e5e5] bg-[#ffffff] p-6"
-                >
-                  <span className="font-mono heading-5 text-[#ff1f7a]">{s.step}</span>
-                  <h3 className="mt-3 title-2 text-[#0a0a0a]">{s.title}</h3>
-                  <p className="mt-2 body-6 text-[#525252]">{s.detail}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Public 7 Branch Directory */}
-        <section id="branches" className="mx-auto max-w-[1200px] px-4 py-16 sm:px-6">
-          <div className="max-w-[680px]">
-            <p className="caption-3 uppercase tracking-widest text-[#ff1f7a]">
-              Branch Directory
-            </p>
-            <h2 className="mt-2 heading-4 text-[#0a0a0a]">
-              Visit any of our seven licensed pharmacy branches
-            </h2>
-          </div>
-
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {PUBLIC_BRANCHES.map((branch, idx) => (
-              <motion.article
-                key={branch.name}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{ delay: Math.min(idx * 0.05, 0.3), duration: 0.6, ease: WEIGHTED_EASE }}
-                className="rounded-2xl border border-[#e5e5e5] bg-[#ffffff] p-5"
-              >
-                <div className="flex items-center gap-2 text-[#ff1f7a]">
-                  <MapPin size={16} weight="fill" />
-                  <span className="caption-4">Retail Branch</span>
-                </div>
-                <h3 className="mt-2 title-3 text-[#0a0a0a]">{branch.name}</h3>
-                <p className="mt-1 body-6 text-[#525252]">{branch.address}</p>
-                <div className="mt-4 border-t border-[#f0f0f0] pt-3 flex items-center justify-between caption-5 text-[#737373]">
-                  <span>{branch.hours}</span>
-                  <span className="font-mono">{branch.phone}</span>
-                </div>
-              </motion.article>
-            ))}
-          </div>
-        </section>
-
         {/* Wholesale Partner Enquiry */}
-        <section id="wholesale" className="mx-auto max-w-[1200px] px-4 py-16 sm:px-6">
+        <section id="wholesale" className="mx-auto max-w-[1140px] px-4 py-14 sm:px-6">
           <div className="grid grid-cols-1 gap-8 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-8 sm:p-12 lg:grid-cols-12">
             <div className="lg:col-span-6">
               <p className="caption-3 uppercase tracking-widest text-[#ff1f7a]">
                 Wholesale Distribution
               </p>
               <h2 className="mt-2 heading-4 text-[#0a0a0a]">
-                Partner with our central warehouse for reliable pharmacy supply
+                Apply for licensed pharmacy wholesale supply
               </h2>
               <p className="mt-3 body-5 text-[#525252]">
-                External pharmacies receive verified wholesale pricing, controlled batch allocation, and full invoice history after license review by our head office team.
+                Approved partner pharmacies receive dedicated contract pricing, central warehouse batch allocation, and verified invoice history.
               </p>
             </div>
 
@@ -533,7 +446,7 @@ export default function PublicLandingPage() {
                   <CheckCircle size={28} weight="fill" className="text-[#ff1f7a]" />
                   <h3 className="mt-3 title-2 text-[#0a0a0a]">Wholesale enquiry recorded</h3>
                   <p className="mt-1 body-6 text-[#525252]">
-                    Our head office wholesale desk will contact you with registration and license verification instructions.
+                    Our head office wholesale desk will contact you with license verification instructions.
                   </p>
                 </div>
               ) : (
@@ -552,7 +465,7 @@ export default function PublicLandingPage() {
                       value={pharmacyName}
                       onChange={(e) => setPharmacyName(e.target.value)}
                       placeholder="Greenleaf Medical Hall"
-                      className="h-10 w-full rounded-lg border border-[#d4d4d4] bg-[#ffffff] px-3 body-6 text-[#0a0a0a] placeholder:text-[#a3a3a3] focus:border-[#ff1f7a] focus:outline-none"
+                      className="h-10 w-full rounded-lg border border-[#d4d4d4] bg-[#ffffff] px-3 body-6 text-[#0a0a0a] focus:border-[#ff1f7a] focus:outline-none"
                     />
                   </div>
                   <div>
@@ -566,12 +479,12 @@ export default function PublicLandingPage() {
                       value={contactEmail}
                       onChange={(e) => setContactEmail(e.target.value)}
                       placeholder="purchasing@greenleafpharmacy.com"
-                      className="h-10 w-full rounded-lg border border-[#d4d4d4] bg-[#ffffff] px-3 body-6 text-[#0a0a0a] placeholder:text-[#a3a3a3] focus:border-[#ff1f7a] focus:outline-none"
+                      className="h-10 w-full rounded-lg border border-[#d4d4d4] bg-[#ffffff] px-3 body-6 text-[#0a0a0a] focus:border-[#ff1f7a] focus:outline-none"
                     />
                   </div>
                   <button
                     type="submit"
-                    className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-[#ff1f7a] px-4 py-2.5 button-sm text-[#ffffff] transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[#e11d74] active:scale-[0.98] cursor-pointer"
+                    className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-[#ff1f7a] px-4 py-2.5 button-sm text-[#ffffff] transition-colors duration-300 hover:bg-[#e11d74] cursor-pointer"
                   >
                     <span>Request wholesale onboarding</span>
                     <ArrowRight size={15} weight="bold" />
@@ -582,16 +495,12 @@ export default function PublicLandingPage() {
           </div>
         </section>
 
-        {/* FAQ Section */}
-        <section id="faq" className="mx-auto max-w-[900px] px-4 py-16 sm:px-6">
-          <p className="caption-3 uppercase tracking-widest text-[#ff1f7a]">
-            Questions & Answers
-          </p>
-          <h2 className="mt-2 heading-4 text-[#0a0a0a]">
-            Common questions about our pharmacy network
-          </h2>
+        {/* FAQ */}
+        <section id="faq" className="mx-auto max-w-[900px] px-4 py-14 sm:px-6">
+          <p className="caption-3 uppercase tracking-widest text-[#ff1f7a]">FAQ</p>
+          <h2 className="mt-2 heading-4 text-[#0a0a0a]">Common questions</h2>
 
-          <div className="mt-8 flex flex-col gap-3">
+          <div className="mt-6 flex flex-col gap-3">
             {FAQS.map((item, idx) => {
               const isOpen = openFaq === idx;
               return (
@@ -630,40 +539,17 @@ export default function PublicLandingPage() {
             })}
           </div>
         </section>
-
-        {/* Final CTA */}
-        <section className="mx-auto max-w-[1200px] px-4 py-16 sm:px-6">
-          <div className="rounded-2xl border border-[#ff1f7a]/25 bg-[#fff0f6] p-8 sm:p-14 text-center">
-            <h2 className="mx-auto max-w-[680px] heading-4 text-[#0a0a0a]">
-              Authorized pharmacy staff and branch managers
-            </h2>
-            <p className="mx-auto mt-3 max-w-[540px] body-5 text-[#525252]">
-              Sign in with your assigned role to access the 3D isometric inventory twin, batch ledger, transfers, and retail POS.
-            </p>
-            <div className="mt-6">
-              <Link
-                href={portalHref}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#ff1f7a] px-4 py-2.5 button-md text-[#ffffff] transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[#e11d74] active:scale-[0.98]"
-              >
-                <span>{isAuthenticated ? "Enter Operations Workspace" : "Sign in to Staff Portal"}</span>
-                <ArrowRight size={17} weight="bold" />
-              </Link>
-            </div>
-          </div>
-        </section>
       </main>
 
       <footer className="border-t border-[#e5e5e5] bg-[#ffffff] py-8">
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="mx-auto flex max-w-[1140px] flex-wrap items-center justify-between gap-4 px-4 sm:px-6">
           <span className="caption-4 text-[#737373]">
-            © 2026 MedGrid Pharmacy Network. All rights reserved.
+            © 2026 MedGrid Pharmacy Network · Dhaka, Bangladesh
           </span>
           <div className="flex items-center gap-6 caption-4 text-[#737373]">
-            <a href="#faq" className="hover:text-[#0a0a0a]">Privacy Policy</a>
-            <a href="#faq" className="hover:text-[#0a0a0a]">Terms of Service</a>
-            <Link href={portalHref} className="text-[#ff1f7a] hover:underline">
-              Staff Portal
-            </Link>
+            <Link href="/shop" className="hover:text-[#0a0a0a]">Medicines</Link>
+            <Link href="/branches" className="hover:text-[#0a0a0a]">Dhaka Branches</Link>
+            <Link href="/login" className="text-[#ff1f7a] hover:underline">Staff Portal</Link>
           </div>
         </div>
       </footer>

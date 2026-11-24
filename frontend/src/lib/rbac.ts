@@ -130,3 +130,4 @@ export function canAccessRoute(role: UserRole, pathname: string): boolean {
 export function getDefaultRouteForRole(role: UserRole): AppRoute {
   return ROLE_DIRECTORY[role]?.defaultRoute ?? "/dashboard";
 }
+
