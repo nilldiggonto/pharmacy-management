@@ -90,3 +90,4 @@ class GoodsReceiptResponse(BaseModel):
     received_at: datetime
     notes: str | None
     items: list[GoodsReceiptItemResponse]
+

@@ -294,3 +294,4 @@ async def get_expiry_report(
         )
         for batch, loc, prod in rows
     ]
+

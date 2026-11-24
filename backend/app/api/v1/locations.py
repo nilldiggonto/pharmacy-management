@@ -110,3 +110,4 @@ async def update_location(
     await db.commit()
     await db.refresh(location)
     return location
+

@@ -175,3 +175,4 @@ class DailyClosing(Base):
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     submitted_by_user_id: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+

@@ -89,3 +89,4 @@ async def test_dashboard_reports_and_adjustment_separation_of_duties(
     ).json()
     assert len(expiry) == 1
     assert expiry[0]["batch_number"] == "LOT-OM-1"
+

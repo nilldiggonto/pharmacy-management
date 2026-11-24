@@ -105,3 +105,4 @@ async def update_supplier(
     await db.commit()
     await db.refresh(supplier)
     return supplier
+

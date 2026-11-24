@@ -34,3 +34,4 @@ async def list_audit_logs(
         stmt = stmt.where(AuditLog.user_id == user_id)
     result = await db.execute(stmt)
     return list(result.scalars().all())
+

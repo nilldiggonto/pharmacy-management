@@ -21,3 +21,4 @@ class Supplier(Base, TimestampMixin):
     opening_balance: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
     current_balance: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+

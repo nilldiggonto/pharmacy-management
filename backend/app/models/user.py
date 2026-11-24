@@ -63,3 +63,4 @@ class UserLocationAccess(Base):
     )
 
     user: Mapped[User] = relationship(back_populates="location_assignments")
+

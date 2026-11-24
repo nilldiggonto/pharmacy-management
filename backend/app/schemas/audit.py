@@ -17,3 +17,4 @@ class AuditLogResponse(BaseModel):
     new_values: dict[str, Any] | None
     reason: str | None
     created_at: datetime
+

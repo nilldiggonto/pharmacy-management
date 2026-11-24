@@ -115,3 +115,4 @@ class GoodsReceiptItem(Base):
     unit_cost: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
 
     goods_receipt: Mapped[GoodsReceipt] = relationship(back_populates="items")
+

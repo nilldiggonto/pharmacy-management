@@ -157,3 +157,4 @@ async def update_product(
     await db.commit()
     await db.refresh(product)
     return product
+

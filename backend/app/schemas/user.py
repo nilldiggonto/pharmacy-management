@@ -37,3 +37,4 @@ class UserResponse(BaseModel):
     location_ids: list[int]
     created_at: datetime
     updated_at: datetime
+

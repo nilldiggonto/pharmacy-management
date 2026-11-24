@@ -179,3 +179,4 @@ async def deduct_fefo_stock(
         )
 
     return allocations
+

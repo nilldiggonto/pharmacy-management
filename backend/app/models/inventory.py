@@ -131,3 +131,4 @@ class StockAdjustment(Base, TimestampMixin):
     approved_by_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+

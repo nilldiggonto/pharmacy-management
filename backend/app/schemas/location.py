@@ -41,3 +41,4 @@ class LocationResponse(BaseModel):
     manager_user_id: int | None
     created_at: datetime
     updated_at: datetime
+

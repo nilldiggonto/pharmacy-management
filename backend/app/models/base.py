@@ -24,3 +24,4 @@ class TimestampMixin:
         onupdate=utcnow,
         nullable=False,
     )
+

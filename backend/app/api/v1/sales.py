@@ -488,3 +488,4 @@ async def create_sale_return(
         .where(SaleReturn.id == sale_return.id)
     )
     return res.scalar_one()
+

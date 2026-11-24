@@ -51,3 +51,4 @@ class ExpiryAlertItem(BaseModel):
     days_remaining: int
     current_quantity: int
     status: str
+

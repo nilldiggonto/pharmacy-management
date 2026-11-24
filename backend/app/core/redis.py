@@ -43,3 +43,4 @@ async def is_token_revoked(jti: str) -> bool:
     client = await get_redis()
     value = await client.get(f"revoked_token:{jti}")
     return value is not None
+

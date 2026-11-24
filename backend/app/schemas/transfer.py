@@ -80,3 +80,4 @@ class TransferResponse(BaseModel):
     received_at: datetime | None
     items: list[TransferItemResponse]
     created_at: datetime
+

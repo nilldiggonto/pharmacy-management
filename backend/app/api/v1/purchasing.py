@@ -370,3 +370,4 @@ async def receive_goods(
     await db.commit()
     await db.refresh(receipt)
     return receipt
+

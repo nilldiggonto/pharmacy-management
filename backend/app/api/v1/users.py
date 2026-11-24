@@ -161,3 +161,4 @@ async def update_user(
     await db.commit()
     await db.refresh(user)
     return user
+

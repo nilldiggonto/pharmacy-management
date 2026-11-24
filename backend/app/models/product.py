@@ -29,3 +29,4 @@ class Product(Base, TimestampMixin):
     requires_prescription: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     storage_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+

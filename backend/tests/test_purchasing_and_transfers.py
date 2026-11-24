@@ -144,3 +144,4 @@ async def test_purchasing_partial_receipt_and_transfer_in_transit(
     ).json()
     assert len(br_after_recv) == 1
     assert br_after_recv[0]["current_quantity"] == 23
+

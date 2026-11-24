@@ -150,3 +150,4 @@ async def test_pos_fefo_expired_block_return_quarantine_and_closing(
     closing = closing_res.json()
     assert Decimal(closing["expected_cash"]) == Decimal("210.00")
     assert Decimal(closing["cash_discrepancy"]) == Decimal("-5.00")
+

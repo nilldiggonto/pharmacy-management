@@ -83,3 +83,4 @@ def assert_location_access(user: User, location_id: int) -> None:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have access to this location",
         )
+

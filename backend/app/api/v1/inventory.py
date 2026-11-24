@@ -340,3 +340,4 @@ async def reject_stock_adjustment(
     await db.commit()
     await db.refresh(adjustment)
     return adjustment
+

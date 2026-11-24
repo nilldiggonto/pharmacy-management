@@ -29,3 +29,4 @@ async def record_audit(
     )
     db.add(entry)
     return entry
+

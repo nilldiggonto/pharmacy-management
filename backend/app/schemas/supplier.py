@@ -44,3 +44,4 @@ class SupplierResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+

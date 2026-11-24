@@ -93,3 +93,4 @@ class StockTransferDispatchBatch(Base):
     received_quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     transfer_item: Mapped[StockTransferItem] = relationship(back_populates="dispatch_batches")
+
