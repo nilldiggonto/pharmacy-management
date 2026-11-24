@@ -68,6 +68,7 @@ DEFAULT_USERS = [
     ("pharmacist@pharmacy.com", "Dr. Samira Haque", "StaffPass123!", UserRole.PHARMACIST, False, ["BR-01", "BR-02"]),
     ("cashier@pharmacy.com", "Tanvir Ahmed", "StaffPass123!", UserRole.CASHIER, False, ["BR-01", "BR-02"]),
     ("inventory@pharmacy.com", "Farzana Yasmin", "StaffPass123!", UserRole.INVENTORY_OFFICER, True, ["WH-01"]),
+    ("data.entry@pharmacy.com", "Mehedi Hasan", "StaffPass123!", UserRole.STOCK_ENTRY_OPERATOR, False, ["WH-01"]),
     ("procurement@pharmacy.com", "Imran Hossain", "StaffPass123!", UserRole.PROCUREMENT_OFFICER, True, ["WH-01"]),
     ("accountant@pharmacy.com", "Shabnam Chowdhury", "StaffPass123!", UserRole.ACCOUNTANT, True, []),
 ]

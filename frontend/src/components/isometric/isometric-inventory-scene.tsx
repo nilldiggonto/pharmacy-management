@@ -52,71 +52,67 @@ interface IsometricInventorySceneProps {
  * Projected around Dhaka (90.4125°E, 23.8103°N) into crisp 3D studio coordinates.
  */
 const BD_LON_LAT: [number, number][] = [
-  [88.42, 26.63], // Tetulia / Panchagarh
+  [88.42, 26.63],
   [88.85, 26.45],
-  [89.18, 26.25], // Lalmonirhat
-  [89.62, 26.18], // Kurigram north
+  [89.18, 26.25],
+  [89.62, 26.18],
   [89.84, 25.88],
-  [89.86, 25.52], // Jamalpur / Sherpur
-  [90.28, 25.25], // Mymensingh north
-  [90.78, 25.18], // Netrokona
-  [91.32, 25.19], // Sunamganj
-  [91.95, 25.18], // Sylhet north
-  [92.42, 25.02], // Zakiganj east
-  [92.36, 24.68], // Moulvibazar
+  [89.86, 25.52],
+  [90.28, 25.25],
+  [90.78, 25.18],
+  [91.32, 25.19],
+  [91.95, 25.18],
+  [92.42, 25.02],
+  [92.36, 24.68],
   [92.05, 24.38],
-  [91.68, 24.18], // Habiganj
-  [91.34, 23.86], // Brahmanbaria / Akhaura
-  [91.28, 23.46], // Comilla east
-  [91.42, 23.06], // Feni
-  [91.68, 22.92], // Khagrachhari
-  [92.18, 23.22], // Sajek / Rangamati north
-  [92.45, 22.75], // Rangamati east
-  [92.55, 22.12], // Bandarban
-  [92.64, 21.52], // Thanchi
-  [92.38, 21.18], // Naikhongchhari
-  [92.32, 20.74], // Teknaf tip
-  [92.16, 20.92], // Cox's Bazar coast
-  [91.94, 21.44], // Cox's Bazar
-  [91.85, 21.92], // Maheshkhali / Kutubdia
-  [91.74, 22.34], // Chattogram port
-  [91.56, 22.72], // Sitakunda
-  [91.36, 22.86], // Sandwip channel
-  [91.08, 22.64], // Noakhali coast
-  [90.82, 22.46], // Lakshmipur / Meghna estuary
-  [90.66, 22.12], // Bhola island
-  [90.42, 21.92], // Patuakhali
-  [90.12, 21.84], // Kuakata / Barguna
-  [89.84, 21.96], // Pirojpur / Bagerhat
-  [89.56, 21.74], // Sundarbans east
-  [89.22, 21.68], // Sundarbans central
-  [89.02, 21.88], // Sundarbans west
-  [88.96, 22.36], // Satkhira
-  [88.88, 22.94], // Jessore / Benapole
-  [88.74, 23.36], // Jhenaidah
-  [88.62, 23.72], // Chuadanga / Meherpur
-  [88.76, 24.08], // Kushtia
-  [88.58, 24.36], // Rajshahi
-  [88.14, 24.64], // Chapainawabganj
-  [88.34, 25.02], // Naogaon
-  [88.64, 25.28], // Joypurhat
-  [88.42, 25.64], // Dinajpur west
-  [88.16, 25.98], // Thakurgaon
-  [88.24, 26.32], // Panchagarh west
+  [91.68, 24.18],
+  [91.34, 23.86],
+  [91.28, 23.46],
+  [91.42, 23.06],
+  [91.68, 22.92],
+  [92.18, 23.22],
+  [92.45, 22.75],
+  [92.55, 22.12],
+  [92.64, 21.52],
+  [92.38, 21.18],
+  [92.32, 20.74],
+  [92.16, 20.92],
+  [91.94, 21.44],
+  [91.85, 21.92],
+  [91.74, 22.34],
+  [91.56, 22.72],
+  [91.36, 22.86],
+  [91.08, 22.64],
+  [90.82, 22.46],
+  [90.66, 22.12],
+  [90.42, 21.92],
+  [90.12, 21.84],
+  [89.84, 21.96],
+  [89.56, 21.74],
+  [89.22, 21.68],
+  [89.02, 21.88],
+  [88.96, 22.36],
+  [88.88, 22.94],
+  [88.74, 23.36],
+  [88.62, 23.72],
+  [88.76, 24.08],
+  [88.58, 24.36],
+  [88.14, 24.64],
+  [88.34, 25.02],
+  [88.64, 25.28],
+  [88.42, 25.64],
+  [88.16, 25.98],
+  [88.24, 26.32],
 ];
 
 function projectLonLat(lon: number, lat: number): [number, number] {
   const centerLon = 90.4125;
   const centerLat = 23.8103;
   const scale = 5.4;
-  const x = (lon - centerLon) * scale * 0.92;
-  const y = (lat - centerLat) * scale;
-  return [x, y];
+  return [(lon - centerLon) * scale * 0.92, (lat - centerLat) * scale];
 }
 
-// Major rivers of Bangladesh in [lon, lat]
 const RIVERS_LON_LAT: [number, number][][] = [
-  // Jamuna -> Padma -> Lower Meghna
   [
     [89.76, 25.82],
     [89.72, 25.25],
@@ -127,14 +123,12 @@ const RIVERS_LON_LAT: [number, number][][] = [
     [90.72, 22.72],
     [90.84, 22.25],
   ],
-  // Ganges / Padma from Rajshahi
   [
     [88.32, 24.48],
     [88.85, 24.18],
     [89.38, 23.92],
     [89.78, 23.86],
   ],
-  // Upper Meghna from Sylhet
   [
     [91.86, 24.92],
     [91.32, 24.48],
@@ -154,18 +148,15 @@ const DIVISION_MARKERS: { name: string; lonLat: [number, number] }[] = [
   { name: "Chattogram", lonLat: [91.78, 22.35] },
 ];
 
-/**
- * Geographic relative layout of Uttara Main Hub & 7 Dhaka branches on the Dhaka Metro plateau.
- */
 const DHAKA_COORDS: Record<string, { pos: [number, number]; shortName: string }> = {
-  "WH-01": { pos: [0.0, -2.55], shortName: "Uttara Main Hub" },
-  "CW-01": { pos: [0.0, -2.55], shortName: "Uttara Main Hub" },
-  "HQ-01": { pos: [-1.55, -2.75], shortName: "Head Office" },
-  "BR-01": { pos: [1.75, -2.0], shortName: "Uttara Flagship" },
-  "BR-02": { pos: [-2.6, -0.7], shortName: "Mirpur 10" },
-  "BR-03": { pos: [2.7, -0.35], shortName: "Bashundhara R/A" },
+  "WH-01": { pos: [0.0, -2.35], shortName: "Uttara Main Hub" },
+  "CW-01": { pos: [0.0, -2.35], shortName: "Uttara Main Hub" },
+  "HQ-01": { pos: [-1.55, -2.65], shortName: "Head Office" },
+  "BR-01": { pos: [1.85, -1.85], shortName: "Uttara Flagship" },
+  "BR-02": { pos: [-2.6, -0.65], shortName: "Mirpur 10" },
+  "BR-03": { pos: [2.7, -0.3], shortName: "Bashundhara R/A" },
   "BR-04": { pos: [1.7, 0.95], shortName: "Gulshan 2" },
-  "BR-05": { pos: [0.0, 0.2], shortName: "Banani Rd 11" },
+  "BR-05": { pos: [0.0, 0.25], shortName: "Banani Rd 11" },
   "BR-06": { pos: [-2.15, 1.65], shortName: "Dhanmondi 27" },
   "BR-07": { pos: [1.6, 2.5], shortName: "Motijheel" },
 };
@@ -207,6 +198,24 @@ function buildDeliveryVan(colorHex: number): THREE.Group {
   return van;
 }
 
+function disposeGroupChildren(group: THREE.Group): void {
+  while (group.children.length > 0) {
+    const child = group.children[0];
+    group.remove(child);
+    child.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (mesh.geometry) mesh.geometry.dispose();
+      if (mesh.material) {
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach((m) => m.dispose());
+        } else {
+          mesh.material.dispose();
+        }
+      }
+    });
+  }
+}
+
 export function IsometricInventoryScene({
   locations,
   branchPerformance,
@@ -231,10 +240,54 @@ export function IsometricInventoryScene({
   const [focusedTransferId, setFocusedTransferId] = useState<number | null>(null);
   const [actionBusy, setActionBusy] = useState<number | null>(null);
 
+  // Persistent Three.js scene refs (never torn down on data refresh!)
+  const buildingsGroupRef = useRef<THREE.Group | null>(null);
+  const routesGroupRef = useRef<THREE.Group | null>(null);
+  const pickablesRef = useRef<THREE.Object3D[]>([]);
+  const pinTopMapRef = useRef<Map<string, THREE.Vector3>>(new Map());
+  const nodeRingsRef = useRef<Map<string, THREE.Mesh>>(new Map());
+  const movingVansRef = useRef<
+    { id: number; mesh: THREE.Group; curve: THREE.QuadraticBezierCurve3; t: number; speed: number }[]
+  >([]);
+
+  // Live data refs read by the 60fps loop without triggering WebGL re-init
   const viewModeRef = useRef(viewMode);
   const selectedCodeRef = useRef(selectedCode);
   const onSelectRef = useRef(onSelectCode);
-  const focusedTransferIdRef = useRef(focusedTransferId);
+  const visibleLocsRef = useRef<Location[]>([]);
+  const perfByCodeRef = useRef<Map<string, BranchPerformanceRow>>(new Map());
+  const lowStockCodesRef = useRef<Set<string>>(new Set());
+  const expiryCodesRef = useRef<Set<string>>(new Set());
+
+  const locById = useMemo(() => new Map(locations.map((l) => [l.id, l])), [locations]);
+  const prodById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
+  const perfByCode = useMemo(
+    () => new Map(branchPerformance.map((b) => [b.location_code, b])),
+    [branchPerformance]
+  );
+  const visibleLocs = useMemo(
+    () => locations.filter((l) => DHAKA_COORDS[l.code] && l.code !== "HQ-01"),
+    [locations]
+  );
+  const activeTransfers = useMemo(
+    () =>
+      transfers.filter((t) =>
+        ["submitted", "requested", "approved", "dispatched", "in_transit", "under_investigation"].includes(
+          t.status
+        )
+      ),
+    [transfers]
+  );
+  const inTransitCount = useMemo(
+    () =>
+      activeTransfers.filter((t) => t.status === "dispatched" || t.status === "in_transit").length,
+    [activeTransfers]
+  );
+  const lowStockCodes = useMemo(() => new Set(lowStock.map((l) => l.location_code)), [lowStock]);
+  const expiryCodes = useMemo(
+    () => new Set(expiryAlerts.filter((e) => e.days_remaining <= 30).map((e) => e.location_code)),
+    [expiryAlerts]
+  );
 
   useEffect(() => {
     viewModeRef.current = viewMode;
@@ -246,38 +299,13 @@ export function IsometricInventoryScene({
     onSelectRef.current = onSelectCode;
   }, [onSelectCode]);
   useEffect(() => {
-    focusedTransferIdRef.current = focusedTransferId;
-  }, [focusedTransferId]);
+    visibleLocsRef.current = visibleLocs;
+    perfByCodeRef.current = perfByCode;
+    lowStockCodesRef.current = lowStockCodes;
+    expiryCodesRef.current = expiryCodes;
+  }, [visibleLocs, perfByCode, lowStockCodes, expiryCodes]);
 
-  const locById = useMemo(() => new Map(locations.map((l) => [l.id, l])), [locations]);
-  const prodById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
-  const perfByCode = useMemo(
-    () => new Map(branchPerformance.map((b) => [b.location_code, b])),
-    [branchPerformance]
-  );
-
-  const activeTransfers = useMemo(
-    () =>
-      transfers.filter((t) =>
-        ["submitted", "requested", "approved", "dispatched", "in_transit", "under_investigation"].includes(
-          t.status
-        )
-      ),
-    [transfers]
-  );
-
-  const inTransitCount = useMemo(
-    () =>
-      activeTransfers.filter((t) => t.status === "dispatched" || t.status === "in_transit").length,
-    [activeTransfers]
-  );
-
-  const lowStockCodes = useMemo(() => new Set(lowStock.map((l) => l.location_code)), [lowStock]);
-  const expiryCodes = useMemo(
-    () => new Set(expiryAlerts.filter((e) => e.days_remaining <= 30).map((e) => e.location_code)),
-    [expiryAlerts]
-  );
-
+  // Effect 1: Mount persistent 3D Bangladesh + Dhaka scene ONCE (zero flicker on state updates!)
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -287,11 +315,11 @@ export function IsometricInventoryScene({
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#F4EDE2");
-    scene.fog = new THREE.Fog("#F4EDE2", 34, 72);
+    scene.fog = new THREE.Fog("#F4EDE2", 36, 78);
 
     const camera = new THREE.PerspectiveCamera(34, width / height, 0.1, 200);
-    camera.position.set(0, 11.4, 11.2);
-    camera.lookAt(0, 0.65, 0);
+    camera.position.set(0, 11.8, 11.6);
+    camera.lookAt(0, 0.7, -0.35);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     renderer.setSize(width, height);
@@ -301,7 +329,6 @@ export function IsometricInventoryScene({
     container.innerHTML = "";
     container.appendChild(renderer.domElement);
 
-    // Realistic studio daylight + warm rim
     scene.add(new THREE.HemisphereLight(0xfffcf7, 0xd9cbb8, 1.05));
 
     const sun = new THREE.DirectionalLight(0xfff7ec, 1.05);
@@ -318,14 +345,9 @@ export function IsometricInventoryScene({
     sun.shadow.camera.bottom = -dShadow;
     scene.add(sun);
 
-    // Subtle Bay of Bengal / topographic water plane
     const waterPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(90, 90),
-      new THREE.MeshStandardMaterial({
-        color: 0xe9e1d4,
-        roughness: 0.72,
-        metalness: 0.05,
-      })
+      new THREE.MeshStandardMaterial({ color: 0xe9e1d4, roughness: 0.72, metalness: 0.05 })
     );
     waterPlane.rotation.x = -Math.PI / 2;
     waterPlane.position.y = -0.05;
@@ -336,16 +358,13 @@ export function IsometricInventoryScene({
     grid.position.y = -0.02;
     scene.add(grid);
 
-    // 1. High-resolution Smooth 3D Bangladesh Landmass (Spline-smoothed ~160 border segments)
+    // Smooth high-poly Bangladesh relief landmass
     const rawPts = BD_LON_LAT.map(([lon, lat]) => {
       const [px, py] = projectLonLat(lon, lat);
       return new THREE.Vector2(px, py);
     });
-    const spline = new THREE.SplineCurve(rawPts);
-    const smoothPts = spline.getPoints(160);
-    const bdShape = new THREE.Shape(smoothPts);
-
-    const bdGeo = new THREE.ExtrudeGeometry(bdShape, {
+    const smoothPts = new THREE.SplineCurve(rawPts).getPoints(160);
+    const bdGeo = new THREE.ExtrudeGeometry(new THREE.Shape(smoothPts), {
       depth: 0.58,
       bevelEnabled: true,
       bevelThickness: 0.14,
@@ -357,34 +376,29 @@ export function IsometricInventoryScene({
 
     const bdMesh = new THREE.Mesh(
       bdGeo,
-      new THREE.MeshStandardMaterial({
-        color: 0xfffdf9,
-        roughness: 0.48,
-        metalness: 0.02,
-      })
+      new THREE.MeshStandardMaterial({ color: 0xfffdf9, roughness: 0.48, metalness: 0.02 })
     );
     bdMesh.receiveShadow = true;
     bdMesh.castShadow = true;
     scene.add(bdMesh);
 
-    // Crisp crimson national border contour on top face
     const borderPts3D = smoothPts.map((p) => new THREE.Vector3(p.x, 0.73, -p.y));
     borderPts3D.push(borderPts3D[0]);
-    const borderLine = new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints(borderPts3D),
-      new THREE.LineBasicMaterial({ color: 0xb91c1c, transparent: true, opacity: 0.55 })
+    scene.add(
+      new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(borderPts3D),
+        new THREE.LineBasicMaterial({ color: 0xb91c1c, transparent: true, opacity: 0.55 })
+      )
     );
-    scene.add(borderLine);
 
-    // 2. Realistic Major Rivers (Jamuna, Padma, Meghna) carved across Bangladesh surface
+    // Jamuna, Padma, Meghna rivers
     RIVERS_LON_LAT.forEach((riverCoords) => {
       const rPts = riverCoords.map(([lon, lat]) => {
         const [rx, ry] = projectLonLat(lon, lat);
         return new THREE.Vector3(rx, 0.74, -ry);
       });
-      const rCurve = new THREE.CatmullRomCurve3(rPts);
       const rMesh = new THREE.Mesh(
-        new THREE.TubeGeometry(rCurve, 48, 0.085, 8, false),
+        new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rPts), 48, 0.085, 8, false),
         new THREE.MeshStandardMaterial({
           color: 0x93c5fd,
           roughness: 0.2,
@@ -397,12 +411,11 @@ export function IsometricInventoryScene({
       scene.add(rMesh);
     });
 
-    // 3. Elevated Dhaka Metropolitan Region Plateau
+    // Elevated Dhaka Metropolitan Plateau
     const dhakaGroup = new THREE.Group();
     dhakaGroup.position.set(0, 0.72, 0);
     scene.add(dhakaGroup);
 
-    // Two-tier architectural plinth for Dhaka
     const dhakaBase = new THREE.Mesh(
       new THREE.CylinderGeometry(4.0, 4.25, 0.22, 64),
       new THREE.MeshStandardMaterial({ color: 0xf7eee3, roughness: 0.45 })
@@ -428,7 +441,6 @@ export function IsometricInventoryScene({
     dhakaRim.position.y = 0.35;
     dhakaGroup.add(dhakaRim);
 
-    // Subtle Dhaka urban road rings & arterials
     [1.6, 2.85].forEach((r) => {
       const roadRing = new THREE.Mesh(
         new THREE.RingGeometry(r - 0.02, r + 0.02, 64),
@@ -439,12 +451,185 @@ export function IsometricInventoryScene({
       dhakaGroup.add(roadRing);
     });
 
-    // 4. Architectural Pharmacy & Warehouse Buildings
+    // Dynamic child groups updated smoothly without remounting WebGL
+    const buildingsGroup = new THREE.Group();
+    const routesGroup = new THREE.Group();
+    dhakaGroup.add(buildingsGroup);
+    dhakaGroup.add(routesGroup);
+    buildingsGroupRef.current = buildingsGroup;
+    routesGroupRef.current = routesGroup;
+
+    // Orbit, wheel zoom, click raycasting
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let orbitAzimuth = 0.2;
+    let zoomFactor = 1.0;
+    let isDragging = false;
+    let dragMoved = 0;
+    let lastX = 0;
+
+    const onPointerDown = (e: PointerEvent) => {
+      isDragging = true;
+      dragMoved = 0;
+      lastX = e.clientX;
+    };
+    const onPointerMove = (e: PointerEvent) => {
+      if (!isDragging) return;
+      const dx = e.clientX - lastX;
+      lastX = e.clientX;
+      dragMoved += Math.abs(dx);
+      orbitAzimuth -= dx * 0.006;
+    };
+    const onPointerUp = (e: PointerEvent) => {
+      if (!isDragging) return;
+      isDragging = false;
+      if (dragMoved < 6) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        raycaster.setFromCamera(pointer, camera);
+        const hits = raycaster.intersectObjects(pickablesRef.current, false);
+        if (hits.length > 0) {
+          const code = hits[0].object.userData?.code as string | undefined;
+          if (code) onSelectRef.current(code);
+        }
+      }
+    };
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      zoomFactor = THREE.MathUtils.clamp(zoomFactor + e.deltaY * 0.0008, 0.72, 1.55);
+    };
+
+    renderer.domElement.addEventListener("pointerdown", onPointerDown);
+    renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+
+    const onResize = () => {
+      const w = container.clientWidth || 880;
+      const h = container.clientHeight || 520;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    };
+    window.addEventListener("resize", onResize);
+
+    let rafId = 0;
+    let frame = 0;
+    const clock = new THREE.Clock();
+    const currentCamPos = camera.position.clone();
+    const currentLook = new THREE.Vector3(0, 0.75, -0.35);
+
+    const tick = () => {
+      rafId = requestAnimationFrame(tick);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const elapsed = clock.getElapsedTime();
+      frame++;
+
+      const baseRadius = viewModeRef.current === "dhaka" ? 11.4 : 29.0;
+      const baseHeight = viewModeRef.current === "dhaka" ? 10.2 : 24.5;
+      const radius = baseRadius * zoomFactor;
+      const heightY = baseHeight * zoomFactor;
+      const desiredCam = new THREE.Vector3(
+        Math.sin(orbitAzimuth) * radius,
+        heightY,
+        Math.cos(orbitAzimuth) * radius
+      );
+      currentCamPos.lerp(desiredCam, 0.07);
+      camera.position.copy(currentCamPos);
+
+      const selCfg = selectedCodeRef.current ? DHAKA_COORDS[selectedCodeRef.current] : null;
+      const desiredLook =
+        viewModeRef.current === "dhaka" && selCfg
+          ? new THREE.Vector3(selCfg.pos[0] * 0.16, 0.85, selCfg.pos[1] * 0.16 - 0.35)
+          : new THREE.Vector3(0, 0.6, viewModeRef.current === "dhaka" ? -0.35 : 0);
+      currentLook.lerp(desiredLook, 0.07);
+      camera.lookAt(currentLook);
+
+      nodeRingsRef.current.forEach((ring, code) => {
+        const isSel = code === selectedCodeRef.current;
+        const mat = ring.material as THREE.MeshBasicMaterial;
+        mat.opacity = THREE.MathUtils.lerp(mat.opacity, isSel ? 0.95 : 0.25, 0.1);
+        const s = isSel ? 1.18 + Math.sin(elapsed * 3.5) * 0.08 : 1;
+        ring.scale.set(s, s, 1);
+      });
+
+      movingVansRef.current.forEach((v) => {
+        v.t = (v.t + dt * v.speed) % 1;
+        const pos = v.curve.getPoint(v.t);
+        const ahead = v.curve.getPoint(Math.min(0.999, v.t + 0.02));
+        v.mesh.position.copy(pos);
+        v.mesh.lookAt(ahead.x, ahead.y + 0.72, ahead.z);
+      });
+
+      renderer.render(scene, camera);
+
+      if (frame % 3 === 0) {
+        const w = container.clientWidth || 880;
+        const h = container.clientHeight || 520;
+        const nextPins: ProjectedPin[] = visibleLocsRef.current.map((loc) => {
+          const v = (pinTopMapRef.current.get(loc.code) ?? new THREE.Vector3()).clone();
+          v.y += 0.72;
+          v.project(camera);
+          const cfg = DHAKA_COORDS[loc.code];
+          return {
+            code: loc.code,
+            label: cfg?.shortName ?? loc.name,
+            revenue: perfByCodeRef.current.get(loc.code)?.inventory_value ?? 0,
+            x: (v.x * 0.5 + 0.5) * w,
+            y: (-v.y * 0.5 + 0.5) * h,
+            visible: v.z < 1,
+            isHub: loc.code === "WH-01",
+            hasAlert:
+              lowStockCodesRef.current.has(loc.code) || expiryCodesRef.current.has(loc.code),
+          };
+        });
+        setPins(nextPins);
+
+        if (viewModeRef.current === "bangladesh") {
+          setDivPins(
+            DIVISION_MARKERS.map((d) => {
+              const [px, py] = projectLonLat(d.lonLat[0], d.lonLat[1]);
+              const v = new THREE.Vector3(px, 0.95, -py);
+              v.project(camera);
+              return {
+                name: d.name,
+                x: (v.x * 0.5 + 0.5) * w,
+                y: (-v.y * 0.5 + 0.5) * h,
+                visible: v.z < 1,
+              };
+            })
+          );
+        } else {
+          setDivPins((prev) => (prev.length > 0 ? [] : prev));
+        }
+      }
+    };
+
+    tick();
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      renderer.domElement.removeEventListener("pointerdown", onPointerDown);
+      renderer.domElement.removeEventListener("wheel", onWheel);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("resize", onResize);
+      buildingsGroupRef.current = null;
+      routesGroupRef.current = null;
+      renderer.dispose();
+    };
+  }, []);
+
+  // Effect 2: Smoothly update buildings in-place without recreating WebGLRenderer
+  useEffect(() => {
+    const bGroup = buildingsGroupRef.current;
+    if (!bGroup) return;
+    disposeGroupChildren(bGroup);
+
     const pickables: THREE.Object3D[] = [];
     const pinTopMap = new Map<string, THREE.Vector3>();
     const nodeRings = new Map<string, THREE.Mesh>();
-
-    const visibleLocs = locations.filter((l) => DHAKA_COORDS[l.code] && l.code !== "HQ-01");
 
     visibleLocs.forEach((loc) => {
       const cfg = DHAKA_COORDS[loc.code];
@@ -456,10 +641,9 @@ export function IsometricInventoryScene({
 
       const nodeGroup = new THREE.Group();
       nodeGroup.position.set(bx, 0.35, bz);
-      dhakaGroup.add(nodeGroup);
+      bGroup.add(nodeGroup);
 
       if (isHub) {
-        // Multi-bay Uttara Main Hub Logistics Warehouse
         const hall = new THREE.Mesh(
           new THREE.BoxGeometry(1.15, 0.72, 0.86),
           new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.32, metalness: 0.12 })
@@ -491,9 +675,8 @@ export function IsometricInventoryScene({
         nodeGroup.add(tower);
         pickables.push(tower);
 
-        pinTopMap.set(loc.code, new THREE.Vector3(bx, 2.05, bz));
+        pinTopMap.set(loc.code, new THREE.Vector3(bx, 2.0, bz));
       } else {
-        // Modern Architectural Dhaka Branch Pharmacy
         const plinth = new THREE.Mesh(
           new THREE.BoxGeometry(0.72, 0.12, 0.72),
           new THREE.MeshStandardMaterial({ color: 0xe7ddd0, roughness: 0.5 })
@@ -527,7 +710,6 @@ export function IsometricInventoryScene({
         pinTopMap.set(loc.code, new THREE.Vector3(bx, 1.45, bz));
       }
 
-      // Selection halo ring
       const ring = new THREE.Mesh(
         new THREE.RingGeometry(isHub ? 0.72 : 0.44, isHub ? 0.84 : 0.54, 36),
         new THREE.MeshBasicMaterial({
@@ -543,10 +725,26 @@ export function IsometricInventoryScene({
       nodeRings.set(loc.code, ring);
     });
 
-    // 5. Real-Data Transfer Routes:
-    //    - ONLY `dispatched` / `in_transit` shipments animate a live 3D delivery van!
-    //    - `submitted` / `approved` / `under_investigation` render calm static route arcs (no fake motion).
-    const movingVans: { mesh: THREE.Group; curve: THREE.QuadraticBezierCurve3; t: number; speed: number }[] = [];
+    pickablesRef.current = pickables;
+    pinTopMapRef.current = pinTopMap;
+    nodeRingsRef.current = nodeRings;
+  }, [visibleLocs, lowStockCodes, expiryCodes]);
+
+  // Effect 3: Smoothly update ONLY transfer routes & vans in-place (preserves van progress + camera!)
+  useEffect(() => {
+    const rGroup = routesGroupRef.current;
+    if (!rGroup) return;
+
+    const prevProgress = new Map(movingVansRef.current.map((v) => [v.id, v.t]));
+    disposeGroupChildren(rGroup);
+
+    const nextVans: {
+      id: number;
+      mesh: THREE.Group;
+      curve: THREE.QuadraticBezierCurve3;
+      t: number;
+      speed: number;
+    }[] = [];
 
     activeTransfers.forEach((trf, idx) => {
       const fromLoc = locById.get(trf.from_location_id);
@@ -568,23 +766,22 @@ export function IsometricInventoryScene({
       const isShortage = trf.status === "under_investigation";
 
       if (isDispatched) {
-        // Solid emerald active delivery route + live 3D cold-chain van moving along it!
         const tube = new THREE.Mesh(
           new THREE.TubeGeometry(curve, 36, 0.045, 8, false),
           new THREE.MeshBasicMaterial({ color: 0x059669, transparent: true, opacity: 0.85 })
         );
-        dhakaGroup.add(tube);
+        rGroup.add(tube);
 
         const van = buildDeliveryVan(0x059669);
-        dhakaGroup.add(van);
-        movingVans.push({
+        rGroup.add(van);
+        nextVans.push({
+          id: trf.id,
           mesh: van,
           curve,
-          t: (idx * 0.35) % 1,
+          t: prevProgress.get(trf.id) ?? (idx * 0.35) % 1,
           speed: 0.22,
         });
       } else {
-        // Calm static dashed route preview for requested / approved / under_investigation (no fake animation!)
         const lineGeo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(32));
         const dashedLine = new THREE.Line(
           lineGeo,
@@ -597,169 +794,12 @@ export function IsometricInventoryScene({
           })
         );
         dashedLine.computeLineDistances();
-        dhakaGroup.add(dashedLine);
+        rGroup.add(dashedLine);
       }
     });
 
-    // Pointer orbit, wheel zoom & click raycasting
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-    let orbitAzimuth = 0.22;
-    let zoomFactor = 1.0;
-    let isDragging = false;
-    let dragMoved = 0;
-    let lastX = 0;
-
-    const onPointerDown = (e: PointerEvent) => {
-      isDragging = true;
-      dragMoved = 0;
-      lastX = e.clientX;
-    };
-    const onPointerMove = (e: PointerEvent) => {
-      if (!isDragging) return;
-      const dx = e.clientX - lastX;
-      lastX = e.clientX;
-      dragMoved += Math.abs(dx);
-      orbitAzimuth -= dx * 0.006;
-    };
-    const onPointerUp = (e: PointerEvent) => {
-      if (!isDragging) return;
-      isDragging = false;
-      if (dragMoved < 6) {
-        const rect = renderer.domElement.getBoundingClientRect();
-        pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-        raycaster.setFromCamera(pointer, camera);
-        const hits = raycaster.intersectObjects(pickables, false);
-        if (hits.length > 0) {
-          const code = hits[0].object.userData?.code as string | undefined;
-          if (code) onSelectRef.current(code);
-        }
-      }
-    };
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      zoomFactor = THREE.MathUtils.clamp(zoomFactor + e.deltaY * 0.0008, 0.72, 1.55);
-    };
-
-    renderer.domElement.addEventListener("pointerdown", onPointerDown);
-    renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-
-    const onResize = () => {
-      const w = container.clientWidth || 880;
-      const h = container.clientHeight || 520;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-    };
-    window.addEventListener("resize", onResize);
-
-    let rafId = 0;
-    let frame = 0;
-    const clock = new THREE.Clock();
-    const currentCamPos = camera.position.clone();
-    const currentLook = new THREE.Vector3(0, 0.75, 0);
-
-    const tick = () => {
-      rafId = requestAnimationFrame(tick);
-      const dt = Math.min(clock.getDelta(), 0.05);
-      const elapsed = clock.getElapsedTime();
-      frame++;
-
-      const baseRadius = viewModeRef.current === "dhaka" ? 10.6 : 29.0;
-      const baseHeight = viewModeRef.current === "dhaka" ? 9.2 : 24.5;
-      const radius = baseRadius * zoomFactor;
-      const heightY = baseHeight * zoomFactor;
-      const desiredCam = new THREE.Vector3(
-        Math.sin(orbitAzimuth) * radius,
-        heightY,
-        Math.cos(orbitAzimuth) * radius
-      );
-      currentCamPos.lerp(desiredCam, 0.07);
-      camera.position.copy(currentCamPos);
-
-      const selCfg = selectedCodeRef.current ? DHAKA_COORDS[selectedCodeRef.current] : null;
-      const desiredLook =
-        viewModeRef.current === "dhaka" && selCfg
-          ? new THREE.Vector3(selCfg.pos[0] * 0.2, 0.85, selCfg.pos[1] * 0.2)
-          : new THREE.Vector3(0, 0.55, 0);
-      currentLook.lerp(desiredLook, 0.07);
-      camera.lookAt(currentLook);
-
-      nodeRings.forEach((ring, code) => {
-        const isSel = code === selectedCodeRef.current;
-        const mat = ring.material as THREE.MeshBasicMaterial;
-        mat.opacity = THREE.MathUtils.lerp(mat.opacity, isSel ? 0.95 : 0.25, 0.1);
-        const s = isSel ? 1.18 + Math.sin(elapsed * 3.5) * 0.08 : 1;
-        ring.scale.set(s, s, 1);
-      });
-
-      // Only move real in-transit dispatched vans, oriented along their delivery arc
-      movingVans.forEach((v) => {
-        v.t = (v.t + dt * v.speed) % 1;
-        const pos = v.curve.getPoint(v.t);
-        const ahead = v.curve.getPoint(Math.min(0.999, v.t + 0.02));
-        v.mesh.position.copy(pos);
-        v.mesh.lookAt(ahead.x, ahead.y + 0.72, ahead.z);
-      });
-
-      renderer.render(scene, camera);
-
-      if (frame % 2 === 0) {
-        const w = container.clientWidth || 880;
-        const h = container.clientHeight || 520;
-        const nextPins: ProjectedPin[] = visibleLocs.map((loc) => {
-          const v = (pinTopMap.get(loc.code) ?? new THREE.Vector3()).clone();
-          v.y += 0.72;
-          v.project(camera);
-          const cfg = DHAKA_COORDS[loc.code];
-          return {
-            code: loc.code,
-            label: cfg?.shortName ?? loc.name,
-            revenue: perfByCode.get(loc.code)?.inventory_value ?? 0,
-            x: (v.x * 0.5 + 0.5) * w,
-            y: (-v.y * 0.5 + 0.5) * h,
-            visible: v.z < 1,
-            isHub: loc.code === "WH-01",
-            hasAlert: lowStockCodes.has(loc.code) || expiryCodes.has(loc.code),
-          };
-        });
-        setPins(nextPins);
-
-        if (viewModeRef.current === "bangladesh") {
-          setDivPins(
-            DIVISION_MARKERS.map((d) => {
-              const [px, py] = projectLonLat(d.lonLat[0], d.lonLat[1]);
-              const v = new THREE.Vector3(px, 0.95, -py);
-              v.project(camera);
-              return {
-                name: d.name,
-                x: (v.x * 0.5 + 0.5) * w,
-                y: (-v.y * 0.5 + 0.5) * h,
-                visible: v.z < 1,
-              };
-            })
-          );
-        } else {
-          setDivPins([]);
-        }
-      }
-    };
-
-    tick();
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      renderer.domElement.removeEventListener("pointerdown", onPointerDown);
-      renderer.domElement.removeEventListener("wheel", onWheel);
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-      window.removeEventListener("resize", onResize);
-      renderer.dispose();
-    };
-  }, [locations, activeTransfers, locById, perfByCode, lowStockCodes, expiryCodes]);
+    movingVansRef.current = nextVans;
+  }, [activeTransfers, locById]);
 
   const runMapAction = async (id: number, fn: () => Promise<void>) => {
     setActionBusy(id);
@@ -780,7 +820,6 @@ export function IsometricInventoryScene({
           aria-label="Interactive 3D Bangladesh and Dhaka live pharmacy operations map"
         />
 
-        {/* Projected Division Labels in National View */}
         {viewMode === "bangladesh" && (
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
             {divPins.map((d) =>
@@ -797,7 +836,6 @@ export function IsometricInventoryScene({
           </div>
         )}
 
-        {/* Projected Dhaka Branch & Hub Pins */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           {pins.map((pin) => {
             if (!pin.visible) return null;
@@ -810,9 +848,9 @@ export function IsometricInventoryScene({
                 style={{
                   transform: `translate3d(${pin.x}px, ${pin.y}px, 0) translate(-50%, -100%)`,
                 }}
-                className={`pointer-events-auto absolute left-0 top-0 flex items-center gap-1.5 rounded-full border px-2.5 py-1 shadow-xs backdrop-blur-md transition-all cursor-pointer ${
+                className={`pointer-events-auto absolute left-0 top-0 flex items-center gap-1.5 rounded-full border px-2.5 py-1 shadow-xs backdrop-blur-md transition-colors cursor-pointer ${
                   active
-                    ? "border-[#991B1B] bg-[#B91C1C] text-[#FFFDF9] scale-105 z-20"
+                    ? "border-[#991B1B] bg-[#B91C1C] text-[#FFFDF9] z-20"
                     : pin.isHub
                       ? "border-[#B91C1C] bg-[#FEF2F2]/95 text-[#991B1B] font-semibold z-10"
                       : "border-[#E2D6C5] bg-[#FFFDF9]/95 text-[#1C1917] hover:border-[#B91C1C]"
@@ -846,7 +884,6 @@ export function IsometricInventoryScene({
           })}
         </div>
 
-        {/* Top Left Badge */}
         <div className="pointer-events-none absolute left-3 top-3 flex items-center gap-2 rounded-full border border-[#E7DDD0] bg-[#FFFDF9]/95 px-3 py-1.5 shadow-xs backdrop-blur-md">
           <Compass size={16} weight="duotone" className="text-[#B91C1C]" />
           <span className="caption-3 font-semibold text-[#1C1917]">
@@ -862,7 +899,6 @@ export function IsometricInventoryScene({
           )}
         </div>
 
-        {/* Top Right View Switcher */}
         <div className="absolute right-3 top-3 flex items-center gap-1 rounded-xl border border-[#E7DDD0] bg-[#FFFDF9]/95 p-1 shadow-xs backdrop-blur-md">
           <button
             type="button"
@@ -888,7 +924,6 @@ export function IsometricInventoryScene({
           </button>
         </div>
 
-        {/* Bottom Legend */}
         <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[#E7DDD0] bg-[#FFFDF9]/95 px-3 py-1.5 caption-5 text-[#57534E] shadow-xs backdrop-blur-md">
             <span className="flex items-center gap-1.5">
@@ -921,7 +956,7 @@ export function IsometricInventoryScene({
             </h3>
           </div>
           <span className="caption-5 text-[#57534E]">
-            Delivery vans only move when a transfer is dispatched; confirm receipt to complete delivery
+            Delivery vans only move when dispatched; map updates smoothly in-place
           </span>
         </div>
 

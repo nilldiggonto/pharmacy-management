@@ -124,6 +124,16 @@ interface AppContextValue {
     }
   ) => Promise<void>;
   changeBatchStatus: (batchId: number, status: string, reason: string) => Promise<void>;
+  addDirectStock: (payload: {
+    locationId: number;
+    productId: number;
+    batchNumber: string;
+    expiryDate: string;
+    quantity: number;
+    purchaseCost?: number;
+    supplierId?: number | null;
+    notes?: string;
+  }) => Promise<void>;
   requestStockAdjustment: (payload: {
     batchId: number;
     quantityChange: number;
@@ -606,6 +616,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const addDirectStock = async (payload: {
+    locationId: number;
+    productId: number;
+    batchNumber: string;
+    expiryDate: string;
+    quantity: number;
+    purchaseCost?: number;
+    supplierId?: number | null;
+    notes?: string;
+  }) => {
+    if (mode === "live_api") {
+      await api.directStockIn({
+        location_id: payload.locationId,
+        product_id: payload.productId,
+        batch_number: payload.batchNumber,
+        expiry_date: payload.expiryDate,
+        quantity: payload.quantity,
+        purchase_cost: payload.purchaseCost,
+        supplier_id: payload.supplierId ?? null,
+        notes: payload.notes ?? null,
+      });
+      await loadLiveData();
+    }
+  };
+
   const requestStockAdjustment = async (payload: {
     batchId: number;
     quantityChange: number;
@@ -839,6 +874,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         approveOrder,
         receivePurchaseOrderGoods,
         changeBatchStatus,
+        addDirectStock,
         requestStockAdjustment,
         approveStockAdjustment,
         rejectStockAdjustment,

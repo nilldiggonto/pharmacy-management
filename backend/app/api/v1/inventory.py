@@ -1,6 +1,8 @@
 from datetime import date, timedelta
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,9 +30,107 @@ from app.schemas.inventory import (
     StockAdjustmentResponse,
     StockMovementResponse,
 )
-from app.services.inventory_service import record_stock_movement
+from app.services.inventory_service import receive_into_batch, record_stock_movement
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
+
+
+class DirectStockInRequest(BaseModel):
+    location_id: int
+    product_id: int
+    batch_number: str = Field(..., min_length=2, max_length=80)
+    expiry_date: date
+    quantity: int = Field(..., gt=0, le=100000)
+    purchase_cost: Decimal | None = Field(default=None, ge=0)
+    supplier_id: int | None = None
+    notes: str | None = Field(default=None, max_length=300)
+
+
+@router.post("/stock-in", response_model=BatchResponse, status_code=status.HTTP_201_CREATED)
+async def direct_stock_in(
+    payload: DirectStockInRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(
+            UserRole.OWNER,
+            UserRole.HEAD_OFFICE_MANAGER,
+            UserRole.INVENTORY_OFFICER,
+            UserRole.STOCK_ENTRY_OPERATOR,
+        )
+    ),
+) -> InventoryBatch:
+    """Direct stock entry / restock into Uttara Main Hub or authorized warehouse location."""
+    assert_location_access(current_user, payload.location_id)
+    if payload.expiry_date <= date.today():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Expiry date must be in the future",
+        )
+
+    loc = (
+        await db.execute(select(Location).where(Location.id == payload.location_id))
+    ).scalar_one_or_none()
+    if loc is None or not loc.holds_stock:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Location not found or does not hold stock",
+        )
+
+    prod = (
+        await db.execute(select(Product).where(Product.id == payload.product_id))
+    ).scalar_one_or_none()
+    if prod is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
+    cost = payload.purchase_cost if payload.purchase_cost is not None else prod.purchase_cost
+    batch = await receive_into_batch(
+        db,
+        location_id=loc.id,
+        product_id=prod.id,
+        batch_number=payload.batch_number.strip().upper(),
+        expiry_date=payload.expiry_date,
+        quantity=payload.quantity,
+        purchase_cost=cost,
+        movement_type=MovementType.PURCHASE_RECEIPT,
+        supplier_id=payload.supplier_id,
+        batch_status=StockStatus.AVAILABLE,
+        reference_type="stock_entry",
+        reference_id=payload.batch_number.strip().upper(),
+        reason=payload.notes or f"Direct stock entry at {loc.name}",
+        performed_by_user_id=current_user.id,
+    )
+
+    await record_audit(
+        db,
+        action="inventory.stock_in",
+        entity_type="inventory_batch",
+        entity_id=batch.id,
+        user_id=current_user.id,
+        location_id=loc.id,
+        new_values={
+            "product_id": prod.id,
+            "sku": prod.sku,
+            "batch_number": batch.batch_number,
+            "quantity_added": payload.quantity,
+            "balance_after": batch.current_quantity,
+        },
+        reason=payload.notes or f"Direct stock entry at {loc.name}",
+    )
+    await db.commit()
+    await db.refresh(batch)
+
+    await event_bus.publish(
+        "inventory.stock_in",
+        kind="receipt",
+        title=f"Stock added to {loc.code}",
+        detail=f"+{payload.quantity} units of {prod.name} (Batch {batch.batch_number})",
+        actor=current_user.full_name,
+        from_code="ENTRY",
+        to_code=loc.code,
+        product_name=prod.name,
+        quantity=payload.quantity,
+    )
+    return batch
 
 
 @router.get("/availability")

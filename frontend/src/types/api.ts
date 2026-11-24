@@ -7,6 +7,7 @@ export type UserRole =
   | "pharmacist"
   | "cashier"
   | "inventory_officer"
+  | "stock_entry_operator"
   | "procurement_officer"
   | "accountant";
 

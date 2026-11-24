@@ -138,6 +138,20 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ status, reason }),
     }),
+  directStockIn: (payload: {
+    location_id: number;
+    product_id: number;
+    batch_number: string;
+    expiry_date: string;
+    quantity: number;
+    purchase_cost?: number;
+    supplier_id?: number | null;
+    notes?: string | null;
+  }) =>
+    request<Batch>("/inventory/stock-in", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   getAdjustments: () => request<StockAdjustment[]>("/inventory/adjustments"),
   requestAdjustment: (payload: {
     batch_id: number;

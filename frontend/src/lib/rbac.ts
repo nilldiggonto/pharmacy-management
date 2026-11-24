@@ -97,6 +97,16 @@ export const ROLE_DIRECTORY: Record<UserRole, RoleMeta> = {
     demoPassword: "StaffPass123!",
     demoFullName: "Farzana Yasmin",
   },
+  stock_entry_operator: {
+    role: "stock_entry_operator",
+    label: "Stock Data Entry",
+    description: "Checks Uttara Main Hub stock, adds new batches to DB, restocks supplies, and receives goods.",
+    defaultRoute: "/inventory",
+    allowedRoutes: ["/inventory", "/products", "/purchasing"],
+    demoEmail: "data.entry@pharmacy.com",
+    demoPassword: "StaffPass123!",
+    demoFullName: "Mehedi Hasan",
+  },
   procurement_officer: {
     role: "procurement_officer",
     label: "Procurement Officer",

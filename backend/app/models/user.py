@@ -13,6 +13,7 @@ class UserRole(str, enum.Enum):
     PHARMACIST = "pharmacist"
     CASHIER = "cashier"
     INVENTORY_OFFICER = "inventory_officer"
+    STOCK_ENTRY_OPERATOR = "stock_entry_operator"
     PROCUREMENT_OFFICER = "procurement_officer"
     ACCOUNTANT = "accountant"
 

@@ -43,7 +43,13 @@ export default function PurchasingPage() {
   const canApprovePO = user && ["owner", "head_office_manager"].includes(user.role);
   const canReceivePO =
     user &&
-    ["owner", "head_office_manager", "inventory_officer", "branch_manager"].includes(user.role);
+    [
+      "owner",
+      "head_office_manager",
+      "inventory_officer",
+      "stock_entry_operator",
+      "branch_manager",
+    ].includes(user.role);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [supplierId, setSupplierId] = useState<number>(suppliers[0]?.id ?? 1);

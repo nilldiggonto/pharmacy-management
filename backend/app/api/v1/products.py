@@ -22,6 +22,7 @@ async def create_product(
             UserRole.HEAD_OFFICE_MANAGER,
             UserRole.PROCUREMENT_OFFICER,
             UserRole.INVENTORY_OFFICER,
+            UserRole.STOCK_ENTRY_OPERATOR,
         )
     ),
 ) -> Product:

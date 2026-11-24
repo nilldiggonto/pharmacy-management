@@ -6,6 +6,7 @@ import {
   CheckCircle,
   MagnifyingGlass,
   Package,
+  Plus,
   SlidersHorizontal,
   Warning,
   XCircle,
@@ -36,9 +37,11 @@ export default function InventoryPage() {
     adjustments,
     movements,
     products,
+    suppliers,
     locations,
     requestRestockTransfer,
     changeBatchStatus,
+    addDirectStock,
     requestStockAdjustment,
     approveStockAdjustment,
     rejectStockAdjustment,
@@ -75,6 +78,15 @@ export default function InventoryPage() {
   const [adjDelta, setAdjDelta] = useState("-2");
   const [adjReason, setAdjReason] = useState("Physical cycle count variance");
 
+  // Direct Stock Entry (Stock-In) modal state
+  const [stockInOpen, setStockInOpen] = useState(false);
+  const [stockInLocId, setStockInLocId] = useState<number>(2);
+  const [stockInProductId, setStockInProductId] = useState<number>(1);
+  const [stockInBatchNo, setStockInBatchNo] = useState("UTT-IN-2026");
+  const [stockInExpiry, setStockInExpiry] = useState("2027-09-30");
+  const [stockInQty, setStockInQty] = useState("150");
+  const [stockInNotes, setStockInNotes] = useState("Direct restock entry at Uttara Main Hub");
+
   const productMap = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
   const locMap = useMemo(() => new Map(locations.map((l) => [l.id, l])), [locations]);
   const hubLocation = useMemo(
@@ -83,6 +95,30 @@ export default function InventoryPage() {
       locations[0],
     [locations]
   );
+
+  const canStockIn =
+    user &&
+    ["owner", "head_office_manager", "inventory_officer", "stock_entry_operator"].includes(
+      user.role
+    );
+  const stockInLocations = useMemo(() => {
+    const stockLocs = locations.filter((l) => l.holds_stock);
+    if (isGlobalRole) return stockLocs;
+    return allowedLocations;
+  }, [locations, isGlobalRole, allowedLocations]);
+
+  React.useEffect(() => {
+    if (stockInLocations.length > 0 && !stockInLocations.some((l) => l.id === stockInLocId)) {
+      const pref = stockInLocations.find((l) => l.code === "WH-01") ?? stockInLocations[0];
+      setStockInLocId(pref.id);
+    }
+  }, [stockInLocations, stockInLocId]);
+
+  React.useEffect(() => {
+    if (products.length > 0 && !products.some((p) => p.id === stockInProductId)) {
+      setStockInProductId(products[0].id);
+    }
+  }, [products, stockInProductId]);
 
   const canManageBatch =
     user &&
@@ -157,6 +193,29 @@ export default function InventoryPage() {
     }
   };
 
+  const handleStockInSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const prod = productMap.get(stockInProductId);
+    try {
+      await addDirectStock({
+        locationId: stockInLocId,
+        productId: stockInProductId,
+        batchNumber: stockInBatchNo.trim(),
+        expiryDate: stockInExpiry,
+        quantity: Math.max(1, Number(stockInQty)),
+        purchaseCost: prod ? Number(prod.purchase_cost) : undefined,
+        supplierId: suppliers[0]?.id ?? null,
+        notes: stockInNotes,
+      });
+      setStockInOpen(false);
+      setFeedback(
+        `Added +${stockInQty} units of ${prod?.name ?? "product"} (Batch ${stockInBatchNo}) into ${locMap.get(stockInLocId)?.name ?? "Uttara Main Hub"}!`
+      );
+    } catch (err) {
+      setFeedback(err instanceof Error ? err.message : "Could not add stock.");
+    }
+  };
+
   return (
     <AppShell>
       <div className="flex flex-col gap-4">
@@ -164,20 +223,34 @@ export default function InventoryPage() {
           <div>
             <h1 className="heading-5 text-[#1C1917]">Network Stock Finder & Batch Inventory</h1>
             <p className="body-6 text-[#57534E]">
-              Check where any medicine or supply is available across Uttara Main Hub and all 7 Dhaka branches, or manage FEFO batches.
+              Check where any medicine or supply is available across Uttara Main Hub and all 7 Dhaka branches, or enter new hub stock.
             </p>
           </div>
-          <SlidingTabs
-            layoutId="inventory-tabs"
-            value={tab}
-            onChange={setTab}
-            options={[
-              { id: "finder", label: "Network Stock Finder", count: networkStock.length },
-              { id: "batches", label: "FEFO Batches", count: batches.length },
-              { id: "adjustments", label: "Adjustments", count: adjustments.length },
-              { id: "movements", label: "Stock Ledger", count: movements.length },
-            ]}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            {canStockIn && (
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setStockInBatchNo(`UTT-IN-${Math.floor(1000 + Math.random() * 8999)}`);
+                  setStockInOpen(true);
+                }}
+              >
+                <Plus size={16} weight="bold" />
+                <span>Add / Restock Hub Stock</span>
+              </Button>
+            )}
+            <SlidingTabs
+              layoutId="inventory-tabs"
+              value={tab}
+              onChange={setTab}
+              options={[
+                { id: "finder", label: "Network Stock Finder", count: networkStock.length },
+                { id: "batches", label: "FEFO Batches", count: batches.length },
+                { id: "adjustments", label: "Adjustments", count: adjustments.length },
+                { id: "movements", label: "Stock Ledger", count: movements.length },
+              ]}
+            />
+          </div>
         </div>
 
         {feedback && (
@@ -636,6 +709,103 @@ export default function InventoryPage() {
                 </Button>
                 <Button type="submit" variant="primary">
                   Submit Restock Request
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Direct Stock Entry / Restock Dialog */}
+        <Dialog open={stockInOpen} onOpenChange={setStockInOpen}>
+          <DialogContent>
+            <DialogTitle>Add / Restock Stock into Database</DialogTitle>
+            <DialogDescription>
+              Check current Uttara Main Hub stock and enter incoming medicine or supply batches directly into live inventory.
+            </DialogDescription>
+            <form onSubmit={handleStockInSubmit} className="mt-4 flex flex-col gap-3">
+              <div>
+                <label className="caption-4 font-medium text-[#1C1917] block mb-1">
+                  Target Location {!isGlobalRole ? "(Assigned Hub)" : ""}
+                </label>
+                <select
+                  value={stockInLocId}
+                  onChange={(e) => setStockInLocId(Number(e.target.value))}
+                  className="h-9 w-full rounded-lg border border-[#DDD2C2] bg-[#FFFFFF] px-2.5 body-6 text-[#1C1917]"
+                >
+                  {stockInLocations.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.code} · {l.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="caption-4 font-medium text-[#1C1917] block mb-1">
+                  Medicine / Supply
+                </label>
+                <select
+                  value={stockInProductId}
+                  onChange={(e) => setStockInProductId(Number(e.target.value))}
+                  className="h-9 w-full rounded-lg border border-[#DDD2C2] bg-[#FFFFFF] px-2.5 body-6 text-[#1C1917]"
+                >
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.sku} · {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="caption-4 font-medium text-[#1C1917] block mb-1">
+                    Batch #
+                  </label>
+                  <Input
+                    required
+                    value={stockInBatchNo}
+                    onChange={(e) => setStockInBatchNo(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="caption-4 font-medium text-[#1C1917] block mb-1">
+                    Expiry Date
+                  </label>
+                  <Input
+                    type="date"
+                    required
+                    value={stockInExpiry}
+                    onChange={(e) => setStockInExpiry(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="caption-4 font-medium text-[#1C1917] block mb-1">
+                    Quantity
+                  </label>
+                  <Input
+                    type="number"
+                    min={1}
+                    required
+                    value={stockInQty}
+                    onChange={(e) => setStockInQty(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="caption-4 font-medium text-[#1C1917] block mb-1">
+                  Entry Note / Reference
+                </label>
+                <Input
+                  value={stockInNotes}
+                  onChange={(e) => setStockInNotes(e.target.value)}
+                  placeholder="Supplier delivery or warehouse restock"
+                />
+              </div>
+              <div className="mt-2 flex justify-end gap-2">
+                <Button type="button" variant="ghost" onClick={() => setStockInOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary">
+                  Save Stock to Database
                 </Button>
               </div>
             </form>

@@ -37,6 +37,7 @@ PO_READ_ROLES = (
     UserRole.HEAD_OFFICE_MANAGER,
     UserRole.PROCUREMENT_OFFICER,
     UserRole.INVENTORY_OFFICER,
+    UserRole.STOCK_ENTRY_OPERATOR,
     UserRole.ACCOUNTANT,
     UserRole.BRANCH_MANAGER,
 )
@@ -236,6 +237,7 @@ async def receive_goods(
             UserRole.OWNER,
             UserRole.HEAD_OFFICE_MANAGER,
             UserRole.INVENTORY_OFFICER,
+            UserRole.STOCK_ENTRY_OPERATOR,
             UserRole.BRANCH_MANAGER,
         )
     ),
