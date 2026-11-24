@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.inventory import AdjustmentStatus, MovementType, StockStatus
 
@@ -45,9 +45,16 @@ class StockMovementResponse(BaseModel):
 
 class StockAdjustmentCreate(BaseModel):
     batch_id: int
-    quantity_change: int = Field(..., ne=0)
+    quantity_change: int
     reason: str = Field(..., min_length=3, max_length=500)
     notes: str | None = None
+
+    @field_validator("quantity_change")
+    @classmethod
+    def validate_non_zero(cls, v: int) -> int:
+        if v == 0:
+            raise ValueError("quantity_change cannot be zero")
+        return v
 
 
 class StockAdjustmentDecision(BaseModel):
