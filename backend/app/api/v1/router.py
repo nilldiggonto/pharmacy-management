@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.v1 import (
     audit,
     auth,
+    events,
     inventory,
     locations,
     products,
@@ -16,6 +17,7 @@ from app.api.v1 import (
 
 api_router = APIRouter()
 api_router.include_router(auth.router)
+api_router.include_router(events.router)
 api_router.include_router(locations.router)
 api_router.include_router(users.router)
 api_router.include_router(products.router)

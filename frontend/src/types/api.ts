@@ -1,4 +1,4 @@
-export type LocationType = "main_office" | "warehouse" | "branch";
+export type LocationType = "main_office" | "central_warehouse" | "warehouse" | "branch";
 
 export type UserRole =
   | "owner"
@@ -17,33 +17,46 @@ export type StockStatus =
   | "quarantined"
   | "damaged"
   | "expired"
+  | "disposed"
   | "returned";
 
 export type MovementType =
+  | "purchase_receipt"
+  | "retail_sale"
   | "goods_receipt"
   | "sale"
   | "sale_void"
   | "sale_return"
+  | "transfer_dispatch"
+  | "transfer_receipt"
   | "transfer_out"
   | "transfer_in"
   | "adjustment_in"
   | "adjustment_out"
-  | "expiry_writeoff";
+  | "expiry_write_off"
+  | "expiry_writeoff"
+  | "damage_loss";
 
 export type PurchaseOrderStatus =
   | "draft"
+  | "submitted"
   | "pending_approval"
   | "approved"
   | "partially_received"
   | "received"
-  | "cancelled";
+  | "cancelled"
+  | "closed";
 
 export type TransferStatus =
+  | "submitted"
   | "requested"
   | "approved"
+  | "dispatched"
   | "in_transit"
+  | "partially_received"
   | "received"
   | "under_investigation"
+  | "rejected"
   | "cancelled";
 
 export type PaymentMethod = "cash" | "card" | "mobile_money" | "bank_transfer";
@@ -308,5 +321,71 @@ export interface LiveFlowEvent {
   quantity: number;
   timestamp: string;
   note: string;
+}
+
+export interface NetworkStockLocation {
+  location_id: number;
+  location_code: string;
+  location_name: string;
+  location_type: string;
+  available_quantity: number;
+  batch_count: number;
+  nearest_expiry: string | null;
+}
+
+export interface NetworkStockProduct {
+  product_id: number;
+  sku: string;
+  name: string;
+  generic_name: string | null;
+  category: string;
+  requires_prescription: boolean;
+  retail_price: number;
+  wholesale_price: number;
+  min_stock_level: number;
+  total_available: number;
+  locations: NetworkStockLocation[];
+}
+
+export interface StockAdjustment {
+  id: number;
+  location_id: number;
+  product_id: number;
+  batch_id: number;
+  quantity_change: number;
+  reason: string;
+  status: "pending" | "approved" | "rejected";
+  requested_by_user_id: number;
+  approved_by_user_id: number | null;
+  approved_at: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface DailyClosing {
+  id: number;
+  location_id: number;
+  closing_date: string;
+  transaction_count: number;
+  total_sales_amount: number;
+  expected_cash: number;
+  expected_card: number;
+  expected_mobile_money: number;
+  expected_bank_transfer: number;
+  actual_cash: number;
+  actual_non_cash: number;
+  cash_discrepancy: number;
+  notes: string | null;
+  submitted_by_user_id: number;
+  created_at: string;
+}
+
+export interface LiveToast {
+  id: string;
+  title: string;
+  detail: string;
+  actor?: string | null;
+  kind: "transfer" | "receipt" | "sale" | "system";
+  timestamp: string;
 }
 

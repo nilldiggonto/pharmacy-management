@@ -24,8 +24,10 @@ export default function ProductsPage() {
   const [sku, setSku] = useState("");
   const [name, setName] = useState("");
   const [genericName, setGenericName] = useState("");
-  const [retailPrice, setRetailPrice] = useState("6.50");
   const [purchaseCost, setPurchaseCost] = useState("4.00");
+  const [wholesalePrice, setWholesalePrice] = useState("5.20");
+  const [retailPrice, setRetailPrice] = useState("6.50");
+  const [requiresRx, setRequiresRx] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -48,7 +50,9 @@ export default function ProductsPage() {
       name: name.trim(),
       generic_name: genericName.trim() || null,
       purchase_cost: parseFloat(purchaseCost) || 0,
+      wholesale_price: parseFloat(wholesalePrice) || 0,
       retail_price: parseFloat(retailPrice) || 0,
+      requires_prescription: requiresRx,
     });
     setSku("");
     setName("");
@@ -61,9 +65,9 @@ export default function ProductsPage() {
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="heading-5 text-[#f5f5f4]">Central Product Catalogue</h1>
-            <p className="body-6 text-[#a8a29e]">
-              Unified SKU, generic formulation, pricing, and prescription controls across all branches.
+            <h1 className="heading-5 text-[#1C1917]">Central Medicine & Supply Catalogue</h1>
+            <p className="body-6 text-[#57534E]">
+              Unified SKU, generic formulation, wholesale and retail pricing, and prescription controls across Uttara Hub and all branches.
             </p>
           </div>
 
@@ -75,14 +79,14 @@ export default function ProductsPage() {
               </Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogTitle>Register new catalogue SKU</DialogTitle>
+              <DialogTitle>Register New Catalogue SKU</DialogTitle>
               <DialogDescription>
-                Products added here become immediately available for purchase orders and branch stock.
+                Products added here become immediately available for purchase orders, wholesale, and branch POS.
               </DialogDescription>
               <form onSubmit={handleCreate} className="mt-4 flex flex-col gap-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="caption-4 text-[#d6d3d1] block mb-1">SKU Code</label>
+                    <label className="caption-4 font-medium text-[#1C1917] block mb-1">SKU Code</label>
                     <Input
                       required
                       value={sku}
@@ -91,7 +95,7 @@ export default function ProductsPage() {
                     />
                   </div>
                   <div>
-                    <label className="caption-4 text-[#d6d3d1] block mb-1">Generic Name</label>
+                    <label className="caption-4 font-medium text-[#1C1917] block mb-1">Generic Name</label>
                     <Input
                       value={genericName}
                       onChange={(e) => setGenericName(e.target.value)}
@@ -100,17 +104,17 @@ export default function ProductsPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="caption-4 text-[#d6d3d1] block mb-1">Product Name</label>
+                  <label className="caption-4 font-medium text-[#1C1917] block mb-1">Product Name</label>
                   <Input
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Azithromycin 500mg Film Coated Tablet"
+                    placeholder="Azithromycin 500mg Tablet"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="caption-4 text-[#d6d3d1] block mb-1">Purchase Cost ($)</label>
+                    <label className="caption-4 font-medium text-[#1C1917] block mb-1">Cost ($)</label>
                     <Input
                       type="number"
                       step="0.01"
@@ -119,7 +123,16 @@ export default function ProductsPage() {
                     />
                   </div>
                   <div>
-                    <label className="caption-4 text-[#d6d3d1] block mb-1">Retail Price ($)</label>
+                    <label className="caption-4 font-medium text-[#1C1917] block mb-1">Wholesale ($)</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={wholesalePrice}
+                      onChange={(e) => setWholesalePrice(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="caption-4 font-medium text-[#1C1917] block mb-1">Retail ($)</label>
                     <Input
                       type="number"
                       step="0.01"
@@ -128,6 +141,15 @@ export default function ProductsPage() {
                     />
                   </div>
                 </div>
+                <label className="flex items-center gap-2 caption-4 text-[#1C1917] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={requiresRx}
+                    onChange={(e) => setRequiresRx(e.target.checked)}
+                    className="accent-[#B91C1C]"
+                  />
+                  Requires Prescription (Rx Only)
+                </label>
                 <div className="mt-2 flex justify-end gap-2">
                   <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
                     Cancel
@@ -146,7 +168,7 @@ export default function ProductsPage() {
             <div className="relative flex-1 max-w-md">
               <MagnifyingGlass
                 size={15}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#78716c]"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#78716C]"
               />
               <Input
                 value={query}
@@ -155,29 +177,31 @@ export default function ProductsPage() {
                 className="pl-9"
               />
             </div>
-            <Badge variant="neutral">{filtered.length} SKUs</Badge>
+            <Badge variant="crimson">{filtered.length} SKUs</Badge>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-[#272727] caption-4 text-[#78716c]">
+                  <tr className="border-b border-[#E7DDD0] caption-4 text-[#78716C]">
                     <th className="py-2 pr-3">SKU</th>
                     <th className="py-2 pr-3">Product & Generic</th>
                     <th className="py-2 pr-3">Category</th>
                     <th className="py-2 pr-3 text-right">Cost</th>
+                    <th className="py-2 pr-3 text-right">Wholesale</th>
                     <th className="py-2 pr-3 text-right">Retail</th>
-                    <th className="py-2 pr-3 text-right">Min Floor</th>
                     <th className="py-2 text-right">Control</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((p) => (
-                    <tr key={p.id} className="border-b border-[#272727]/60 hover:bg-[#1f1f1f]">
-                      <td className="py-2.5 pr-3 font-mono caption-3 text-[#10b981]">{p.sku}</td>
+                    <tr key={p.id} className="border-b border-[#EFE7DB] hover:bg-[#FAF6F0]">
+                      <td className="py-2.5 pr-3 font-mono caption-3 font-semibold text-[#B91C1C]">
+                        {p.sku}
+                      </td>
                       <td className="py-2.5 pr-3">
-                        <p className="body-5 text-[#f5f5f4]">{p.name}</p>
-                        <p className="caption-5 text-[#78716c]">
+                        <p className="body-5 font-medium text-[#1C1917]">{p.name}</p>
+                        <p className="caption-5 text-[#78716C]">
                           {p.generic_name ?? "General"} · {p.brand_name ?? p.manufacturer}
                         </p>
                       </td>
@@ -186,14 +210,14 @@ export default function ProductsPage() {
                           {p.category}
                         </Badge>
                       </td>
-                      <td className="py-2.5 pr-3 text-right font-mono body-6 text-[#a8a29e]">
+                      <td className="py-2.5 pr-3 text-right font-mono body-6 text-[#57534E]">
                         {formatCurrency(p.purchase_cost)}
                       </td>
-                      <td className="py-2.5 pr-3 text-right font-mono body-5 text-[#f5f5f4]">
-                        {formatCurrency(p.retail_price)}
+                      <td className="py-2.5 pr-3 text-right font-mono body-6 text-[#991B1B] font-medium">
+                        {formatCurrency(p.wholesale_price)}
                       </td>
-                      <td className="py-2.5 pr-3 text-right font-mono body-6 text-[#a8a29e]">
-                        {p.min_stock_level} {p.base_unit}
+                      <td className="py-2.5 pr-3 text-right font-mono body-5 font-semibold text-[#1C1917]">
+                        {formatCurrency(p.retail_price)}
                       </td>
                       <td className="py-2.5 text-right">
                         <Badge variant={p.requires_prescription ? "amber" : "emerald"}>
@@ -211,4 +235,3 @@ export default function ProductsPage() {
     </AppShell>
   );
 }
-

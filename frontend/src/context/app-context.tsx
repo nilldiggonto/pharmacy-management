@@ -1,7 +1,13 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { api, clearStoredTokens, getStoredToken, setStoredTokens } from "@/lib/api";
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import {
+  api,
+  clearStoredTokens,
+  getEventsStreamUrl,
+  getStoredToken,
+  setStoredTokens,
+} from "@/lib/api";
 import {
   createSimulatedFlowEvent,
   DEMO_AUDIT_LOGS,
@@ -22,14 +28,18 @@ import { ROLE_DIRECTORY } from "@/lib/rbac";
 import type {
   AuditLog,
   Batch,
+  DailyClosing,
   DashboardSummary,
   ExpiryAlertItem,
   LiveFlowEvent,
+  LiveToast,
   Location,
   LowStockItem,
+  NetworkStockProduct,
   Product,
   PurchaseOrder,
   Sale,
+  StockAdjustment,
   StockMovement,
   Supplier,
   Transfer,
@@ -44,11 +54,17 @@ interface AppContextValue {
   isAuthenticated: boolean;
   authChecked: boolean;
   loading: boolean;
+  sseConnected: boolean;
+  liveToast: LiveToast | null;
+  dismissToast: () => void;
   user: User | null;
   locations: Location[];
   products: Product[];
   suppliers: Supplier[];
   batches: Batch[];
+  networkStock: NetworkStockProduct[];
+  adjustments: StockAdjustment[];
+  dailyClosings: DailyClosing[];
   movements: StockMovement[];
   purchaseOrders: PurchaseOrder[];
   transfers: Transfer[];
@@ -66,14 +82,77 @@ interface AppContextValue {
   signInAsRolePreview: (role: UserRole) => User;
   signOut: () => Promise<void>;
   refreshData: () => Promise<void>;
+  requestRestockTransfer: (payload: {
+    fromLocationId: number;
+    toLocationId: number;
+    reason: string;
+    items: { productId: number; quantity: number }[];
+  }) => Promise<void>;
+  approveTransferRequest: (transferId: number) => Promise<void>;
   triggerTransferDispatch: (transferId: number) => Promise<void>;
+  receiveTransferShipment: (
+    transferId: number,
+    payload: {
+      discrepancyNotes?: string;
+      items: { transferItemId: number; receivedQuantity: number }[];
+    }
+  ) => Promise<void>;
+  createNewPurchaseOrder: (payload: {
+    supplierId: number;
+    destinationLocationId: number;
+    expectedDate?: string;
+    notes?: string;
+    items: { productId: number; quantity: number; unitCost: number }[];
+  }) => Promise<void>;
   approveOrder: (poId: number) => Promise<void>;
+  receivePurchaseOrderGoods: (
+    poId: number,
+    payload: {
+      supplierInvoiceNumber?: string;
+      notes?: string;
+      items: {
+        poItemId: number;
+        batchNumber: string;
+        expiryDate: string;
+        quantityReceived: number;
+        damagedQuantity: number;
+      }[];
+    }
+  ) => Promise<void>;
+  changeBatchStatus: (batchId: number, status: string, reason: string) => Promise<void>;
+  requestStockAdjustment: (payload: {
+    batchId: number;
+    quantityChange: number;
+    reason: string;
+    notes?: string;
+  }) => Promise<void>;
+  approveStockAdjustment: (id: number) => Promise<void>;
+  rejectStockAdjustment: (id: number) => Promise<void>;
   completePosSale: (payload: {
     locationId: number;
     customerName: string;
+    customerPhone?: string;
     paymentMethod: string;
+    saleMode?: "retail" | "wholesale";
     items: { product: Product; quantity: number }[];
   }) => Promise<Sale>;
+  voidSaleInvoice: (saleId: number, reason: string) => Promise<void>;
+  returnSaleItem: (
+    saleId: number,
+    payload: {
+      saleItemId: number;
+      quantity: number;
+      reason: string;
+      refundMethod: string;
+      condition: string;
+    }
+  ) => Promise<void>;
+  submitDailyClosing: (payload: {
+    locationId: number;
+    actualCash: number;
+    actualNonCash: number;
+    notes?: string;
+  }) => Promise<void>;
   addProduct: (payload: Partial<Product> & { sku: string; name: string }) => Promise<void>;
 }
 
@@ -96,7 +175,7 @@ function buildPreviewUser(role: UserRole): User {
       role === "accountant",
     location_ids:
       role === "branch_manager" || role === "pharmacist" || role === "cashier"
-        ? [3]
+        ? [3, 4]
         : [1, 2, 3, 4, 5, 6, 7, 8, 9],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -109,11 +188,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
   const [authChecked, setAuthChecked] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sseConnected, setSseConnected] = useState(false);
+  const [liveToast, setLiveToast] = useState<LiveToast | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [user, setUser] = useState<User | null>(null);
   const [locations, setLocations] = useState<Location[]>(DEMO_LOCATIONS);
   const [products, setProducts] = useState<Product[]>(DEMO_PRODUCTS);
   const [suppliers, setSuppliers] = useState<Supplier[]>(DEMO_SUPPLIERS);
   const [batches, setBatches] = useState<Batch[]>(DEMO_BATCHES);
+  const [networkStock, setNetworkStock] = useState<NetworkStockProduct[]>([]);
+  const [adjustments, setAdjustments] = useState<StockAdjustment[]>([]);
+  const [dailyClosings, setDailyClosings] = useState<DailyClosing[]>([]);
   const [movements, setMovements] = useState<StockMovement[]>(DEMO_MOVEMENTS);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(DEMO_PURCHASE_ORDERS);
   const [transfers, setTransfers] = useState<Transfer[]>(DEMO_TRANSFERS);
@@ -124,9 +210,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(DEMO_AUDIT_LOGS);
   const [liveFlows, setLiveFlows] = useState<LiveFlowEvent[]>(INITIAL_LIVE_FLOWS);
   const [simulationRunning, setSimulationRunning] = useState(true);
-  const [selectedLocationCode, setSelectedLocationCode] = useState<string | null>("CW-01");
+  const [selectedLocationCode, setSelectedLocationCode] = useState<string | null>("WH-01");
 
   const isAuthenticated = user !== null && mode !== "unauthenticated";
+
+  const showToast = useCallback((toast: LiveToast) => {
+    setLiveToast(toast);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => {
+      setLiveToast(null);
+    }, 6000);
+  }, []);
+
+  const dismissToast = useCallback(() => {
+    setLiveToast(null);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  }, []);
 
   const loadLiveData = useCallback(async () => {
     const [
@@ -136,6 +235,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       prods,
       sups,
       btchs,
+      netAvail,
+      adjs,
+      closings,
       movs,
       pos,
       trfs,
@@ -150,6 +252,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       api.getProducts().catch(() => []),
       api.getSuppliers().catch(() => []),
       api.getBatches().catch(() => []),
+      api.getNetworkAvailability().catch(() => []),
+      api.getAdjustments().catch(() => []),
+      api.getDailyClosings().catch(() => []),
       api.getMovements().catch(() => []),
       api.getPurchaseOrders().catch(() => []),
       api.getTransfers().catch(() => []),
@@ -165,6 +270,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (prods.length > 0) setProducts(prods);
     setSuppliers(sups);
     setBatches(btchs);
+    setNetworkStock(netAvail);
+    setAdjustments(adjs);
+    setDailyClosings(closings);
     setMovements(movs);
     setPurchaseOrders(pos);
     setTransfers(trfs);
@@ -208,31 +316,67 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     void refreshData();
   }, [refreshData]);
 
-  // Real time telemetry stream for isometric visualization (only when signed in)
+  // Real-time Server-Sent Events (SSE) subscription when connected to live FastAPI
   useEffect(() => {
-    if (!simulationRunning || !isAuthenticated) return;
+    if (mode !== "live_api" || !isAuthenticated) {
+      setSseConnected(false);
+      return;
+    }
+    const url = getEventsStreamUrl();
+    if (!url || typeof EventSource === "undefined") return;
+
+    const es = new EventSource(url);
+    es.onopen = () => setSseConnected(true);
+    es.onerror = () => setSseConnected(false);
+    es.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.event_type === "connected") {
+          setSseConnected(true);
+          return;
+        }
+        showToast({
+          id: data.id || `evt-${Date.now()}`,
+          title: data.title || "Live update",
+          detail: data.detail || "Inventory state updated",
+          actor: data.actor,
+          kind: data.kind || "system",
+          timestamp: data.timestamp || new Date().toISOString(),
+        });
+        if (data.from_code && data.to_code) {
+          setLiveFlows((prev) => [
+            {
+              id: data.id || `sse-${Date.now()}`,
+              kind: data.kind === "receipt" || data.kind === "sale" ? data.kind : "transfer",
+              fromCode: data.from_code,
+              toCode: data.to_code,
+              productName: data.product_name || data.title || "Live Stock Event",
+              quantity: data.quantity || 1,
+              timestamp: data.timestamp || new Date().toISOString(),
+              note: data.detail || "",
+            },
+            ...prev,
+          ].slice(0, 30));
+        }
+        void loadLiveData();
+      } catch {
+        // ignore malformed heartbeat
+      }
+    };
+
+    return () => {
+      es.close();
+      setSseConnected(false);
+    };
+  }, [mode, isAuthenticated, loadLiveData, showToast]);
+
+  // Ambient flow ticker in role_preview mode
+  useEffect(() => {
+    if (!simulationRunning || !isAuthenticated || mode !== "role_preview") return;
     const interval = setInterval(() => {
       const ev = createSimulatedFlowEvent();
       setLiveFlows((prev) => [ev, ...prev].slice(0, 24));
-
-      if (mode === "role_preview" && ev.kind === "sale") {
-        setDashboard((prev) => ({
-          ...prev,
-          sales_today: Number((prev.sales_today + ev.quantity * 6.45).toFixed(2)),
-          transaction_count_today: prev.transaction_count_today + 1,
-          branch_performance: prev.branch_performance.map((b) =>
-            b.location_code === ev.fromCode
-              ? {
-                  ...b,
-                  sales_revenue: Number((b.sales_revenue + ev.quantity * 6.45).toFixed(2)),
-                  transaction_count: b.transaction_count + 1,
-                }
-              : b
-          ),
-        }));
-      }
-    }, 3600);
-
+    }, 4500);
     return () => clearInterval(interval);
   }, [simulationRunning, isAuthenticated, mode]);
 
@@ -283,45 +427,114 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setMode("unauthenticated");
   };
 
+  const requestRestockTransfer = async (payload: {
+    fromLocationId: number;
+    toLocationId: number;
+    reason: string;
+    items: { productId: number; quantity: number }[];
+  }) => {
+    if (mode === "live_api") {
+      await api.createTransfer({
+        from_location_id: payload.fromLocationId,
+        to_location_id: payload.toLocationId,
+        reason: payload.reason,
+        items: payload.items.map((i) => ({
+          product_id: i.productId,
+          requested_quantity: i.quantity,
+        })),
+      });
+      await loadLiveData();
+      return;
+    }
+    showToast({
+      id: `demo-trf-${Date.now()}`,
+      title: "Restock request created",
+      detail: payload.reason,
+      kind: "transfer",
+      timestamp: new Date().toISOString(),
+    });
+  };
+
+  const approveTransferRequest = async (transferId: number) => {
+    if (mode === "live_api") {
+      await api.approveTransfer(transferId);
+      await loadLiveData();
+      return;
+    }
+    setTransfers((prev) =>
+      prev.map((t) => (t.id === transferId ? { ...t, status: "approved" } : t))
+    );
+  };
+
   const triggerTransferDispatch = async (transferId: number) => {
     if (mode === "live_api") {
       await api.dispatchTransfer(transferId);
-      await refreshData();
+      await loadLiveData();
       return;
     }
     setTransfers((prev) =>
       prev.map((t) =>
         t.id === transferId
-          ? { ...t, status: "in_transit", dispatched_at: new Date().toISOString() }
+          ? { ...t, status: "dispatched", dispatched_at: new Date().toISOString() }
           : t
       )
     );
-    const target = transfers.find((t) => t.id === transferId);
-    if (target) {
-      const fromLoc = locations.find((l) => l.id === target.from_location_id);
-      const toLoc = locations.find((l) => l.id === target.to_location_id);
-      const firstItem = target.items[0];
-      const prod = products.find((p) => p.id === firstItem?.product_id);
-      setLiveFlows((prev) => [
-        {
-          id: `dispatch-${Date.now()}`,
-          kind: "transfer",
-          fromCode: fromLoc?.code ?? "CW-01",
-          toCode: toLoc?.code ?? "BR-01",
-          productName: prod?.name ?? "Stock Transfer",
-          quantity: firstItem?.requested_quantity ?? 50,
-          timestamp: new Date().toISOString(),
-          note: `Dispatched ${target.transfer_number} via FEFO`,
-        },
-        ...prev,
-      ]);
+  };
+
+  const receiveTransferShipment = async (
+    transferId: number,
+    payload: {
+      discrepancyNotes?: string;
+      items: { transferItemId: number; receivedQuantity: number }[];
+    }
+  ) => {
+    if (mode === "live_api") {
+      await api.receiveTransfer(transferId, {
+        discrepancy_notes: payload.discrepancyNotes || null,
+        items: payload.items.map((i) => ({
+          transfer_item_id: i.transferItemId,
+          received_quantity: i.receivedQuantity,
+        })),
+      });
+      await loadLiveData();
+      return;
+    }
+    setTransfers((prev) =>
+      prev.map((t) =>
+        t.id === transferId
+          ? { ...t, status: "received", received_at: new Date().toISOString() }
+          : t
+      )
+    );
+  };
+
+  const createNewPurchaseOrder = async (payload: {
+    supplierId: number;
+    destinationLocationId: number;
+    expectedDate?: string;
+    notes?: string;
+    items: { productId: number; quantity: number; unitCost: number }[];
+  }) => {
+    if (mode === "live_api") {
+      await api.createPurchaseOrder({
+        supplier_id: payload.supplierId,
+        destination_location_id: payload.destinationLocationId,
+        expected_date: payload.expectedDate || null,
+        notes: payload.notes || null,
+        items: payload.items.map((i) => ({
+          product_id: i.productId,
+          quantity_ordered: i.quantity,
+          unit_cost: i.unitCost,
+        })),
+      });
+      await loadLiveData();
     }
   };
 
   const approveOrder = async (poId: number) => {
     if (mode === "live_api") {
       await api.approvePurchaseOrder(poId);
-      await refreshData();
+      await loadLiveData();
       return;
     }
     setPurchaseOrders((prev) =>
@@ -333,14 +546,88 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+  const receivePurchaseOrderGoods = async (
+    poId: number,
+    payload: {
+      supplierInvoiceNumber?: string;
+      notes?: string;
+      items: {
+        poItemId: number;
+        batchNumber: string;
+        expiryDate: string;
+        quantityReceived: number;
+        damagedQuantity: number;
+      }[];
+    }
+  ) => {
+    if (mode === "live_api") {
+      await api.receivePurchaseOrder(poId, {
+        supplier_invoice_number: payload.supplierInvoiceNumber || null,
+        notes: payload.notes || null,
+        items: payload.items.map((i) => ({
+          po_item_id: i.poItemId,
+          batch_number: i.batchNumber,
+          expiry_date: i.expiryDate,
+          quantity_received: i.quantityReceived,
+          damaged_quantity: i.damagedQuantity,
+        })),
+      });
+      await loadLiveData();
+    }
+  };
+
+  const changeBatchStatus = async (batchId: number, status: string, reason: string) => {
+    if (mode === "live_api") {
+      await api.updateBatchStatus(batchId, status, reason);
+      await loadLiveData();
+    }
+  };
+
+  const requestStockAdjustment = async (payload: {
+    batchId: number;
+    quantityChange: number;
+    reason: string;
+    notes?: string;
+  }) => {
+    if (mode === "live_api") {
+      await api.requestAdjustment({
+        batch_id: payload.batchId,
+        quantity_change: payload.quantityChange,
+        reason: payload.reason,
+        notes: payload.notes,
+      });
+      await loadLiveData();
+    }
+  };
+
+  const approveStockAdjustment = async (id: number) => {
+    if (mode === "live_api") {
+      await api.approveAdjustment(id);
+      await loadLiveData();
+    }
+  };
+
+  const rejectStockAdjustment = async (id: number) => {
+    if (mode === "live_api") {
+      await api.rejectAdjustment(id);
+      await loadLiveData();
+    }
+  };
+
   const completePosSale = async (payload: {
     locationId: number;
     customerName: string;
+    customerPhone?: string;
     paymentMethod: string;
+    saleMode?: "retail" | "wholesale";
     items: { product: Product; quantity: number }[];
   }): Promise<Sale> => {
+    const isWholesale = payload.saleMode === "wholesale";
     const subtotal = payload.items.reduce(
-      (sum, item) => sum + item.product.retail_price * item.quantity,
+      (sum, item) =>
+        sum +
+        Number(isWholesale ? item.product.wholesale_price : item.product.retail_price) *
+          item.quantity,
       0
     );
     const total = Number(subtotal.toFixed(2));
@@ -348,14 +635,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (mode === "live_api") {
       const created = await api.createSale({
         location_id: payload.locationId,
-        customer_name: payload.customerName || null,
+        customer_name:
+          payload.customerName ||
+          (isWholesale ? "Wholesale Clinic Order" : "Walk-In Customer"),
+        customer_phone: payload.customerPhone || null,
         items: payload.items.map((i) => ({
           product_id: i.product.id,
           quantity: i.quantity,
+          unit_price: Number(
+            isWholesale ? i.product.wholesale_price : i.product.retail_price
+          ),
         })),
         payments: [{ payment_method: payload.paymentMethod, amount: total }],
       });
-      await refreshData();
+      await loadLiveData();
       return created;
     }
 
@@ -366,7 +659,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       location_id: payload.locationId,
       cashier_user_id: user?.id ?? 1,
       customer_name: payload.customerName || "Walk In Customer",
-      customer_phone: null,
+      customer_phone: payload.customerPhone || null,
       status: "completed",
       subtotal: total,
       discount_amount: 0,
@@ -379,32 +672,66 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         product_name_snapshot: i.product.name,
         batch_number_snapshot: "FEFO-AUTO",
         quantity: i.quantity,
-        unit_price: i.product.retail_price,
+        unit_price: isWholesale ? i.product.wholesale_price : i.product.retail_price,
         unit_cost: i.product.purchase_cost,
-        line_total: Number((i.product.retail_price * i.quantity).toFixed(2)),
+        line_total: Number(
+          ((isWholesale ? i.product.wholesale_price : i.product.retail_price) * i.quantity).toFixed(2)
+        ),
       })),
       created_at: new Date().toISOString(),
     };
     setSales((prev) => [created, ...prev]);
-    setDashboard((prev) => ({
-      ...prev,
-      sales_today: Number((prev.sales_today + total).toFixed(2)),
-      transaction_count_today: prev.transaction_count_today + 1,
-    }));
-    setLiveFlows((prev) => [
-      {
-        id: `sale-${Date.now()}`,
-        kind: "sale",
-        fromCode: loc?.code ?? "BR-01",
-        toCode: "POS",
-        productName: payload.items[0]?.product.name ?? "Retail Sale",
-        quantity: payload.items.reduce((s, i) => s + i.quantity, 0),
-        timestamp: new Date().toISOString(),
-        note: `Invoice ${created.invoice_number} settled via ${payload.paymentMethod}`,
-      },
-      ...prev,
-    ]);
     return created;
+  };
+
+  const voidSaleInvoice = async (saleId: number, reason: string) => {
+    if (mode === "live_api") {
+      await api.voidSale(saleId, reason);
+      await loadLiveData();
+    }
+  };
+
+  const returnSaleItem = async (
+    saleId: number,
+    payload: {
+      saleItemId: number;
+      quantity: number;
+      reason: string;
+      refundMethod: string;
+      condition: string;
+    }
+  ) => {
+    if (mode === "live_api") {
+      await api.returnSale(saleId, {
+        reason: payload.reason,
+        refund_method: payload.refundMethod,
+        items: [
+          {
+            sale_item_id: payload.saleItemId,
+            quantity: payload.quantity,
+            condition: payload.condition,
+          },
+        ],
+      });
+      await loadLiveData();
+    }
+  };
+
+  const submitDailyClosing = async (payload: {
+    locationId: number;
+    actualCash: number;
+    actualNonCash: number;
+    notes?: string;
+  }) => {
+    if (mode === "live_api") {
+      await api.createDailyClosing({
+        location_id: payload.locationId,
+        actual_cash: payload.actualCash,
+        actual_non_cash: payload.actualNonCash,
+        notes: payload.notes || null,
+      });
+      await loadLiveData();
+    }
   };
 
   const addProduct = async (
@@ -412,7 +739,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   ) => {
     if (mode === "live_api") {
       await api.createProduct(payload);
-      await refreshData();
+      await loadLiveData();
       return;
     }
     const created: Product = {
@@ -449,11 +776,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated,
         authChecked,
         loading,
+        sseConnected,
+        liveToast,
+        dismissToast,
         user,
         locations,
         products,
         suppliers,
         batches,
+        networkStock,
+        adjustments,
+        dailyClosings,
         movements,
         purchaseOrders,
         transfers,
@@ -471,9 +804,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         signInAsRolePreview,
         signOut,
         refreshData,
+        requestRestockTransfer,
+        approveTransferRequest,
         triggerTransferDispatch,
+        receiveTransferShipment,
+        createNewPurchaseOrder,
         approveOrder,
+        receivePurchaseOrderGoods,
+        changeBatchStatus,
+        requestStockAdjustment,
+        approveStockAdjustment,
+        rejectStockAdjustment,
         completePosSale,
+        voidSaleInvoice,
+        returnSaleItem,
+        submitDailyClosing,
         addProduct,
       }}
     >

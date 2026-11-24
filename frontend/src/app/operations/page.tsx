@@ -17,9 +17,9 @@ export default function OperationsPage() {
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="heading-5 text-[#f5f5f4]">Network Directory & Audit Trail</h1>
-            <p className="body-6 text-[#a8a29e]">
-              Manage locations, supplier credit balances, and immutable operational audit logs.
+            <h1 className="heading-5 text-[#1C1917]">Dhaka Branch Directory, Suppliers & Audit Trail</h1>
+            <p className="body-6 text-[#57534E]">
+              Overview of Uttara Main Hub, all 7 Dhaka retail branches, supplier credit balances, and immutable staff audit logs.
             </p>
           </div>
           <SlidingTabs
@@ -27,28 +27,36 @@ export default function OperationsPage() {
             value={tab}
             onChange={setTab}
             options={[
-              { id: "locations", label: "Locations", count: locations.length },
+              { id: "locations", label: "Branches & Hub", count: locations.length },
               { id: "suppliers", label: "Suppliers", count: suppliers.length },
-              { id: "audit", label: "Audit Log", count: auditLogs.length },
+              { id: "audit", label: "Audit Trail", count: auditLogs.length },
             ]}
           />
         </div>
 
         {tab === "locations" && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {locations.map((loc) => (
-              <Card key={loc.id} className="p-4">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono caption-3 text-[#10b981]">{loc.code}</span>
-                  <Badge variant={loc.location_type === "warehouse" ? "cyan" : "neutral"}>
-                    {loc.location_type.replace("_", " ")}
-                  </Badge>
-                </div>
-                <h2 className="mt-2 title-3 text-[#f5f5f4]">{loc.name}</h2>
-                <p className="mt-1 caption-5 text-[#a8a29e]">{loc.address ?? "Address pending"}</p>
-                <p className="mt-2 font-mono caption-5 text-[#78716c]">{loc.phone ?? loc.email}</p>
-              </Card>
-            ))}
+            {locations.map((loc) => {
+              const isHub = loc.code === "WH-01" || loc.location_type === "central_warehouse";
+              return (
+                <Card
+                  key={loc.id}
+                  className={`p-4 ${isHub ? "border-[#FECACA] bg-[#FEF2F2]/50" : ""}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono caption-3 font-semibold text-[#B91C1C]">
+                      {loc.code}
+                    </span>
+                    <Badge variant={isHub ? "crimson" : "neutral"}>
+                      {loc.location_type.replace(/_/g, " ")}
+                    </Badge>
+                  </div>
+                  <h2 className="mt-2 title-3 text-[#1C1917]">{loc.name}</h2>
+                  <p className="mt-1 caption-5 text-[#57534E]">{loc.address ?? "Dhaka, Bangladesh"}</p>
+                  <p className="mt-2 font-mono caption-5 text-[#78716C]">{loc.phone ?? loc.email}</p>
+                </Card>
+              );
+            })}
           </div>
         )}
 
@@ -60,24 +68,26 @@ export default function OperationsPage() {
             <CardContent className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-[#272727] caption-4 text-[#78716c]">
+                  <tr className="border-b border-[#E7DDD0] caption-4 text-[#78716C]">
                     <th className="py-2 pr-3">Code</th>
                     <th className="py-2 pr-3">Supplier</th>
                     <th className="py-2 pr-3">Contact</th>
                     <th className="py-2 pr-3">Terms</th>
-                    <th className="py-2 text-right">Current Balance</th>
+                    <th className="py-2 text-right">Current Payable</th>
                   </tr>
                 </thead>
                 <tbody>
                   {suppliers.map((sup) => (
-                    <tr key={sup.id} className="border-b border-[#272727]/60 hover:bg-[#1f1f1f]">
-                      <td className="py-2.5 pr-3 font-mono caption-3 text-[#06b6d4]">{sup.code}</td>
-                      <td className="py-2.5 pr-3 body-5 text-[#f5f5f4]">{sup.name}</td>
-                      <td className="py-2.5 pr-3 body-6 text-[#a8a29e]">{sup.contact_person}</td>
-                      <td className="py-2.5 pr-3 font-mono caption-4 text-[#d6d3d1]">
+                    <tr key={sup.id} className="border-b border-[#EFE7DB] hover:bg-[#FAF6F0]">
+                      <td className="py-2.5 pr-3 font-mono caption-3 font-semibold text-[#B91C1C]">
+                        {sup.code}
+                      </td>
+                      <td className="py-2.5 pr-3 body-5 font-medium text-[#1C1917]">{sup.name}</td>
+                      <td className="py-2.5 pr-3 body-6 text-[#57534E]">{sup.contact_person}</td>
+                      <td className="py-2.5 pr-3 font-mono caption-4 text-[#1C1917]">
                         Net {sup.payment_terms_days}d
                       </td>
-                      <td className="py-2.5 text-right font-mono body-5 text-[#fbbf24]">
+                      <td className="py-2.5 text-right font-mono body-5 font-semibold text-[#B45309]">
                         {formatCurrency(sup.current_balance)}
                       </td>
                     </tr>
@@ -91,24 +101,26 @@ export default function OperationsPage() {
         {tab === "audit" && (
           <Card>
             <CardHeader>
-              <CardTitle>Immutable Audit Ledger</CardTitle>
+              <CardTitle>Immutable Staff Audit Trail</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-2">
               {auditLogs.map((log) => (
                 <div
                   key={log.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#272727] bg-[#1f1f1f] px-4 py-3"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#EAE2D6] bg-[#FAF6F0] px-4 py-3"
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="violet">{log.action}</Badge>
-                      <span className="font-mono caption-4 text-[#f5f5f4]">
+                      <Badge variant="crimson">{log.action}</Badge>
+                      <span className="font-mono caption-4 text-[#1C1917]">
                         {log.entity_type} #{log.entity_id}
                       </span>
                     </div>
-                    <p className="mt-1 body-6 text-[#a8a29e]">{log.reason ?? "Recorded system event"}</p>
+                    <p className="mt-1 body-6 text-[#57534E]">
+                      {log.reason ?? "Recorded operational event"}
+                    </p>
                   </div>
-                  <span className="font-mono caption-5 text-[#78716c]">
+                  <span className="font-mono caption-5 text-[#78716C]">
                     {formatTimeAgo(log.created_at)}
                   </span>
                 </div>
@@ -120,4 +132,3 @@ export default function OperationsPage() {
     </AppShell>
   );
 }
-

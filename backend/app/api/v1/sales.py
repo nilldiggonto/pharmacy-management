@@ -10,8 +10,10 @@ from sqlalchemy.orm import selectinload
 from app.core.audit import record_audit
 from app.core.database import get_db
 from app.core.deps import assert_location_access, get_current_user, require_roles
+from app.core.events import event_bus
 from app.models.base import utcnow
 from app.models.inventory import InventoryBatch, MovementType, StockStatus
+from app.models.location import Location
 from app.models.product import Product
 from app.models.sales import (
     DailyClosing,
@@ -159,7 +161,22 @@ async def create_sale(
         )
 
     await db.commit()
-    return await _load_sale(db, sale.id)  # type: ignore[return-value]
+    loaded_sale = await _load_sale(db, sale.id)
+    loc = (await db.execute(select(Location).where(Location.id == sale.location_id))).scalar_one_or_none()
+    total_qty = sum(i.quantity for i in payload.items)
+    first_prod = products_by_id[payload.items[0].product_id]
+    await event_bus.publish(
+        "sale.created",
+        kind="sale",
+        title=f"Invoice {sale.invoice_number} completed",
+        detail=f"{loc.name if loc else 'Branch'} sold {total_qty} units (${sale.total_amount})",
+        actor=current_user.full_name,
+        from_code=loc.code if loc else "BR-01",
+        to_code="POS",
+        product_name=first_prod.name,
+        quantity=total_qty,
+    )
+    return loaded_sale  # type: ignore[return-value]
 
 
 @router.get("", response_model=list[SaleResponse])
@@ -366,7 +383,18 @@ async def void_sale(
         reason=payload.reason,
     )
     await db.commit()
-    return await _load_sale(db, sale.id)  # type: ignore[return-value]
+    loaded_sale = await _load_sale(db, sale.id)
+    loc = (await db.execute(select(Location).where(Location.id == sale.location_id))).scalar_one_or_none()
+    await event_bus.publish(
+        "sale.voided",
+        kind="system",
+        title=f"Invoice {sale.invoice_number} voided",
+        detail=f"{loc.name if loc else 'Branch'} restored stock: {payload.reason}",
+        actor=current_user.full_name,
+        from_code=loc.code if loc else "BR-01",
+        to_code="RESTOCK",
+    )
+    return loaded_sale  # type: ignore[return-value]
 
 
 @router.post(

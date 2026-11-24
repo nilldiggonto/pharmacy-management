@@ -3,16 +3,17 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 caption-4 whitespace-nowrap",
+  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 caption-4 whitespace-nowrap font-medium",
   {
     variants: {
       variant: {
-        neutral: "bg-[#272727] text-[#d6d3d1] border-[#313131]",
-        emerald: "bg-[#10b981]/15 text-[#34d399] border-[#10b981]/30",
-        cyan: "bg-[#06b6d4]/15 text-[#22d3ee] border-[#06b6d4]/30",
-        amber: "bg-[#f59e0b]/15 text-[#fbbf24] border-[#f59e0b]/30",
-        rose: "bg-[#f43f5e]/15 text-[#fb7185] border-[#f43f5e]/30",
-        violet: "bg-[#8b5cf6]/15 text-[#a78bfa] border-[#8b5cf6]/30",
+        neutral: "bg-[#F5EFE6] text-[#44403C] border-[#E7DDD0]",
+        crimson: "bg-[#FEF2F2] text-[#991B1B] border-[#FECACA]",
+        emerald: "bg-[#ECFDF5] text-[#047857] border-[#A7F3D0]",
+        cyan: "bg-[#ECFEFF] text-[#0E7490] border-[#A5F3FC]",
+        amber: "bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]",
+        rose: "bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]",
+        violet: "bg-[#F5F3FF] text-[#6D28D9] border-[#DDD6FE]",
       },
     },
     defaultVariants: {
@@ -36,16 +37,16 @@ export function Badge({
 }: BadgeProps) {
   const dotColor =
     variant === "emerald"
-      ? "bg-[#10b981]"
+      ? "bg-[#10B981]"
       : variant === "cyan"
-        ? "bg-[#06b6d4]"
+        ? "bg-[#06B6D4]"
         : variant === "amber"
-          ? "bg-[#f59e0b]"
-          : variant === "rose"
-            ? "bg-[#f43f5e]"
+          ? "bg-[#D97706]"
+          : variant === "rose" || variant === "crimson"
+            ? "bg-[#B91C1C]"
             : variant === "violet"
-              ? "bg-[#8b5cf6]"
-              : "bg-[#a8a29e]";
+              ? "bg-[#7C3AED]"
+              : "bg-[#78716C]";
 
   return (
     <span className={cn(badgeVariants({ variant }), className)} {...props}>
@@ -64,4 +65,3 @@ export function Badge({
     </span>
   );
 }
-

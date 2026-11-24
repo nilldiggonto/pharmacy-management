@@ -70,9 +70,9 @@ export const ROLE_DIRECTORY: Record<UserRole, RoleMeta> = {
   pharmacist: {
     role: "pharmacist",
     label: "Pharmacist",
-    description: "Dispensing, batch FEFO verification, prescription catalogue, and POS.",
+    description: "Dispensing, batch FEFO verification, network stock lookup, restock requests, and POS.",
     defaultRoute: "/inventory",
-    allowedRoutes: ["/inventory", "/products", "/pos"],
+    allowedRoutes: ["/inventory", "/products", "/transfers", "/pos"],
     demoEmail: "pharmacist@pharmacy.com",
     demoPassword: "StaffPass123!",
     demoFullName: "Dr. Samira Haque",
@@ -80,9 +80,9 @@ export const ROLE_DIRECTORY: Record<UserRole, RoleMeta> = {
   cashier: {
     role: "cashier",
     label: "Cashier",
-    description: "Fast retail POS checkout and daily register settlement at assigned branch.",
+    description: "Fast retail POS checkout, cross-branch stock lookup, and daily register settlement.",
     defaultRoute: "/pos",
-    allowedRoutes: ["/pos"],
+    allowedRoutes: ["/pos", "/inventory"],
     demoEmail: "cashier@pharmacy.com",
     demoPassword: "StaffPass123!",
     demoFullName: "Tanvir Ahmed",

@@ -1,23 +1,103 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { MagnifyingGlass, Package } from "@phosphor-icons/react";
+import {
+  ArrowsLeftRight,
+  CheckCircle,
+  MagnifyingGlass,
+  Package,
+  SlidersHorizontal,
+  Warning,
+  XCircle,
+} from "@phosphor-icons/react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { SlidingTabs } from "@/components/ui/sliding-tabs";
 import { useApp } from "@/context/app-context";
 import { daysUntil, formatCurrency, formatNumber, formatTimeAgo } from "@/lib/utils";
 
 export default function InventoryPage() {
-  const { batches, movements, products, locations } = useApp();
-  const [tab, setTab] = useState("batches");
+  const {
+    user,
+    batches,
+    networkStock,
+    adjustments,
+    movements,
+    products,
+    locations,
+    requestRestockTransfer,
+    changeBatchStatus,
+    requestStockAdjustment,
+    approveStockAdjustment,
+    rejectStockAdjustment,
+  } = useApp();
+
+  const [tab, setTab] = useState("finder");
   const [query, setQuery] = useState("");
   const [locFilter, setLocFilter] = useState<string>("all");
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  // Restock modal state
+  const [restockModal, setRestockModal] = useState<{
+    productId: number;
+    productName: string;
+    toLocationId: number;
+    toLocationName: string;
+    fromLocationId: number;
+  } | null>(null);
+  const [restockQty, setRestockQty] = useState("50");
+  const [restockReason, setRestockReason] = useState("Branch restock requested from Uttara Main Hub");
+
+  // Adjustment modal state
+  const [adjModal, setAdjModal] = useState<{
+    batchId: number;
+    batchNumber: string;
+    productName: string;
+    currentQty: number;
+  } | null>(null);
+  const [adjDelta, setAdjDelta] = useState("-2");
+  const [adjReason, setAdjReason] = useState("Physical cycle count variance");
 
   const productMap = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
   const locMap = useMemo(() => new Map(locations.map((l) => [l.id, l])), [locations]);
+  const hubLocation = useMemo(
+    () =>
+      locations.find((l) => l.code === "WH-01" || l.location_type === "central_warehouse") ??
+      locations[0],
+    [locations]
+  );
+
+  const canManageBatch =
+    user &&
+    ["owner", "head_office_manager", "branch_manager", "inventory_officer"].includes(user.role);
+  const canRequestTransfer =
+    user &&
+    ["owner", "head_office_manager", "branch_manager", "pharmacist", "inventory_officer"].includes(
+      user.role
+    );
+  const canApproveAdjustment =
+    user && ["owner", "head_office_manager", "branch_manager"].includes(user.role);
+
+  const filteredNetwork = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return networkStock;
+    return networkStock.filter(
+      (item) =>
+        item.name.toLowerCase().includes(q) ||
+        item.sku.toLowerCase().includes(q) ||
+        (item.generic_name?.toLowerCase().includes(q) ?? false) ||
+        item.category.toLowerCase().includes(q)
+    );
+  }, [networkStock, query]);
 
   const filteredBatches = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -34,14 +114,49 @@ export default function InventoryPage() {
     });
   }, [batches, locFilter, locMap, productMap, query]);
 
+  const handleRestockSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!restockModal) return;
+    try {
+      await requestRestockTransfer({
+        fromLocationId: restockModal.fromLocationId,
+        toLocationId: restockModal.toLocationId,
+        reason: restockReason,
+        items: [{ productId: restockModal.productId, quantity: Math.max(1, Number(restockQty)) }],
+      });
+      setFeedback(
+        `Restock request sent to Uttara Main Hub for ${restockQty} units of ${restockModal.productName} (${restockModal.toLocationName}).`
+      );
+      setRestockModal(null);
+    } catch (err) {
+      setFeedback(err instanceof Error ? err.message : "Could not submit restock request.");
+    }
+  };
+
+  const handleAdjSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adjModal) return;
+    try {
+      await requestStockAdjustment({
+        batchId: adjModal.batchId,
+        quantityChange: Number(adjDelta),
+        reason: adjReason,
+      });
+      setFeedback(`Adjustment submitted for batch ${adjModal.batchNumber} (awaiting approval).`);
+      setAdjModal(null);
+    } catch (err) {
+      setFeedback(err instanceof Error ? err.message : "Could not submit adjustment.");
+    }
+  };
+
   return (
     <AppShell>
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="heading-5 text-[#f5f5f4]">Batch Inventory & Stock Ledger</h1>
-            <p className="body-6 text-[#a8a29e]">
-              FEFO batch tracking across the central warehouse and all seven retail branches.
+            <h1 className="heading-5 text-[#1C1917]">Network Stock Finder & Batch Inventory</h1>
+            <p className="body-6 text-[#57534E]">
+              Check where any medicine or supply is available across Uttara Main Hub and all 7 Dhaka branches, or manage FEFO batches.
             </p>
           </div>
           <SlidingTabs
@@ -49,153 +164,379 @@ export default function InventoryPage() {
             value={tab}
             onChange={setTab}
             options={[
-              { id: "batches", label: "Active Batches", count: batches.length },
-              { id: "movements", label: "Movement Ledger", count: movements.length },
+              { id: "finder", label: "Network Stock Finder", count: networkStock.length },
+              { id: "batches", label: "FEFO Batches", count: batches.length },
+              { id: "adjustments", label: "Adjustments", count: adjustments.length },
+              { id: "movements", label: "Stock Ledger", count: movements.length },
             ]}
           />
         </div>
 
+        {feedback && (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-[#A7F3D0] bg-[#ECFDF5] px-4 py-3 caption-4 text-[#047857]">
+            <span>{feedback}</span>
+            <button
+              type="button"
+              onClick={() => setFeedback(null)}
+              className="font-semibold underline cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         <Card>
           <CardHeader className="flex-wrap gap-3">
-            <div className="relative flex-1 min-w-[220px] max-w-md">
+            <div className="relative flex-1 min-w-[240px] max-w-md">
               <MagnifyingGlass
-                size={15}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#78716c]"
+                size={16}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#78716C]"
               />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search by batch number, product name, or SKU..."
+                placeholder="Search medicine name, generic, SKU, or batch..."
                 className="pl-9"
               />
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setLocFilter("all")}
-                className={`rounded-lg border px-2.5 py-1 caption-4 cursor-pointer transition-colors duration-200 ${
-                  locFilter === "all"
-                    ? "border-[#10b981] bg-[#10b981]/15 text-[#34d399]"
-                    : "border-[#313131] bg-[#1f1f1f] text-[#a8a29e] hover:text-[#f5f5f4]"
-                }`}
-              >
-                All Locations
-              </button>
-              {locations
-                .filter((l) => l.holds_stock)
-                .map((l) => (
-                  <button
-                    key={l.id}
-                    type="button"
-                    onClick={() => setLocFilter(l.code)}
-                    className={`rounded-lg border px-2.5 py-1 font-mono caption-4 cursor-pointer transition-colors duration-200 ${
-                      locFilter === l.code
-                        ? "border-[#10b981] bg-[#10b981]/15 text-[#34d399]"
-                        : "border-[#313131] bg-[#1f1f1f] text-[#a8a29e] hover:text-[#f5f5f4]"
-                    }`}
-                  >
-                    {l.code}
-                  </button>
-                ))}
-            </div>
+            {tab === "batches" && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setLocFilter("all")}
+                  className={`rounded-lg border px-2.5 py-1 caption-4 cursor-pointer transition-colors ${
+                    locFilter === "all"
+                      ? "border-[#B91C1C] bg-[#FEF2F2] text-[#991B1B] font-semibold"
+                      : "border-[#E7DDD0] bg-[#FAF6F0] text-[#57534E] hover:text-[#1C1917]"
+                  }`}
+                >
+                  All Locations
+                </button>
+                {locations
+                  .filter((l) => l.holds_stock)
+                  .map((l) => (
+                    <button
+                      key={l.id}
+                      type="button"
+                      onClick={() => setLocFilter(l.code)}
+                      className={`rounded-lg border px-2.5 py-1 font-mono caption-4 cursor-pointer transition-colors ${
+                        locFilter === l.code
+                          ? "border-[#B91C1C] bg-[#FEF2F2] text-[#991B1B] font-semibold"
+                          : "border-[#E7DDD0] bg-[#FAF6F0] text-[#57534E] hover:text-[#1C1917]"
+                      }`}
+                    >
+                      {l.code}
+                    </button>
+                  ))}
+              </div>
+            )}
           </CardHeader>
 
           <CardContent>
-            {tab === "batches" ? (
+            {tab === "finder" && (
+              <div className="flex flex-col gap-3">
+                {filteredNetwork.length === 0 ? (
+                  <div className="py-12 text-center body-6 text-[#78716C]">
+                    <Package size={28} className="mx-auto mb-2 text-[#B91C1C]/40" />
+                    No matching medicines found in the network.
+                  </div>
+                ) : (
+                  filteredNetwork.map((item) => {
+                    const hubEntry = item.locations.find(
+                      (l) => l.location_code === "WH-01" || l.location_type === "central_warehouse"
+                    );
+                    return (
+                      <div
+                        key={item.product_id}
+                        className="rounded-2xl border border-[#E7DDD0] bg-[#FAF6F0]/60 p-4"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-2 pb-3 border-b border-[#EAE2D6]">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-mono caption-3 font-semibold text-[#B91C1C]">
+                                {item.sku}
+                              </span>
+                              <Badge variant={item.requires_prescription ? "amber" : "emerald"}>
+                                {item.requires_prescription ? "Rx Only" : "OTC"}
+                              </Badge>
+                              <Badge variant="neutral">{item.category}</Badge>
+                            </div>
+                            <h3 className="mt-1 title-3 text-[#1C1917]">{item.name}</h3>
+                            <p className="caption-5 text-[#57534E]">
+                              {item.generic_name} · Retail {formatCurrency(item.retail_price)} · Wholesale{" "}
+                              {formatCurrency(item.wholesale_price)}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="caption-5 text-[#78716C]">Total Network Stock</p>
+                            <p className="font-mono heading-6 text-[#1C1917]">
+                              {formatNumber(item.total_available)} units
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                          {item.locations.map((loc) => {
+                            const isHub = loc.location_code === "WH-01" || loc.location_type === "central_warehouse";
+                            const isOut = loc.available_quantity === 0;
+                            const isLow = loc.available_quantity > 0 && loc.available_quantity < item.min_stock_level;
+                            return (
+                              <div
+                                key={loc.location_id}
+                                className={`flex flex-col justify-between gap-2 rounded-xl border p-3 ${
+                                  isHub
+                                    ? "border-[#FECACA] bg-[#FEF2F2]/60"
+                                    : isOut
+                                      ? "border-[#FECACA] bg-[#FFFDF9]"
+                                      : "border-[#E7DDD0] bg-[#FFFDF9]"
+                                }`}
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <span className="font-mono caption-5 font-semibold text-[#991B1B]">
+                                      {loc.location_code} {isHub ? "(MAIN HUB)" : ""}
+                                    </span>
+                                    <p className="truncate caption-4 font-medium text-[#1C1917]">
+                                      {loc.location_name}
+                                    </p>
+                                  </div>
+                                  <Badge
+                                    variant={isOut ? "crimson" : isLow ? "amber" : "emerald"}
+                                  >
+                                    {isOut ? "Out" : `${loc.available_quantity}`}
+                                  </Badge>
+                                </div>
+
+                                {!isHub && (isOut || isLow) && canRequestTransfer && hubLocation && (hubEntry?.available_quantity ?? 0) > 0 && (
+                                  <Button
+                                    size="sm"
+                                    variant="primary"
+                                    className="w-full mt-1"
+                                    onClick={() => {
+                                      setRestockQty(String(Math.max(20, item.min_stock_level)));
+                                      setRestockReason(
+                                        `${loc.location_name} ${isOut ? "out of stock" : "low stock"} on ${item.name}; requesting from Uttara Main Hub`
+                                      );
+                                      setRestockModal({
+                                        productId: item.product_id,
+                                        productName: item.name,
+                                        toLocationId: loc.location_id,
+                                        toLocationName: loc.location_name,
+                                        fromLocationId: hubLocation.id,
+                                      });
+                                    }}
+                                  >
+                                    <ArrowsLeftRight size={13} weight="bold" />
+                                    <span>Request from Uttara</span>
+                                  </Button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+
+            {tab === "batches" && (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-[#272727] caption-4 text-[#78716c]">
+                    <tr className="border-b border-[#E7DDD0] caption-4 text-[#78716C]">
                       <th className="py-2 pr-3">Location</th>
                       <th className="py-2 pr-3">Product</th>
                       <th className="py-2 pr-3">Batch</th>
                       <th className="py-2 pr-3">Expiry</th>
-                      <th className="py-2 pr-3 text-right">Sellable</th>
-                      <th className="py-2 pr-3 text-right">Unit Cost</th>
-                      <th className="py-2 text-right">Status</th>
+                      <th className="py-2 pr-3 text-right">Sellable / Total</th>
+                      <th className="py-2 pr-3 text-right">Status</th>
+                      {canManageBatch && <th className="py-2 text-right">Actions</th>}
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredBatches.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="py-10 text-center body-6 text-[#78716c]">
-                          <Package size={24} className="mx-auto mb-2 text-[#44403c]" />
-                          No batches match your current filter.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredBatches.map((b) => {
-                        const loc = locMap.get(b.location_id);
-                        const prod = productMap.get(b.product_id);
-                        const days = daysUntil(b.expiry_date);
-                        return (
-                          <tr
-                            key={b.id}
-                            className="border-b border-[#272727]/60 hover:bg-[#1f1f1f]"
-                          >
-                            <td className="py-2.5 pr-3 font-mono caption-3 text-[#10b981]">
-                              {loc?.code ?? b.location_id}
-                            </td>
-                            <td className="py-2.5 pr-3">
-                              <p className="body-5 text-[#f5f5f4]">{prod?.name ?? `#${b.product_id}`}</p>
-                              <p className="font-mono caption-5 text-[#78716c]">{prod?.sku}</p>
-                            </td>
-                            <td className="py-2.5 pr-3 font-mono caption-3 text-[#d6d3d1]">
-                              {b.batch_number}
-                            </td>
-                            <td className="py-2.5 pr-3">
-                              <p className="font-mono caption-4 text-[#f5f5f4]">{b.expiry_date}</p>
-                              <p
-                                className={`caption-5 ${
-                                  days <= 0
-                                    ? "text-[#fb7185]"
-                                    : days <= 45
-                                      ? "text-[#fbbf24]"
-                                      : "text-[#78716c]"
-                                }`}
-                              >
-                                {days <= 0 ? "Expired" : `${days} days left`}
-                              </p>
-                            </td>
-                            <td className="py-2.5 pr-3 text-right font-mono body-5 text-[#f5f5f4]">
-                              {formatNumber(b.sellable_quantity)} / {formatNumber(b.current_quantity)}
-                            </td>
-                            <td className="py-2.5 pr-3 text-right font-mono body-6 text-[#a8a29e]">
-                              {formatCurrency(b.purchase_cost)}
-                            </td>
+                    {filteredBatches.map((b) => {
+                      const loc = locMap.get(b.location_id);
+                      const prod = productMap.get(b.product_id);
+                      const days = daysUntil(b.expiry_date);
+                      return (
+                        <tr key={b.id} className="border-b border-[#EFE7DB] hover:bg-[#FAF6F0]">
+                          <td className="py-2.5 pr-3 font-mono caption-3 font-semibold text-[#B91C1C]">
+                            {loc?.code ?? b.location_id}
+                          </td>
+                          <td className="py-2.5 pr-3">
+                            <p className="body-5 font-medium text-[#1C1917]">{prod?.name ?? `#${b.product_id}`}</p>
+                            <p className="font-mono caption-5 text-[#78716C]">{prod?.sku}</p>
+                          </td>
+                          <td className="py-2.5 pr-3 font-mono caption-3 text-[#44403C]">
+                            {b.batch_number}
+                          </td>
+                          <td className="py-2.5 pr-3">
+                            <p className="font-mono caption-4 text-[#1C1917]">{b.expiry_date}</p>
+                            <p
+                              className={`caption-5 ${
+                                days <= 0
+                                  ? "text-[#B91C1C] font-semibold"
+                                  : days <= 45
+                                    ? "text-[#B45309] font-medium"
+                                    : "text-[#78716C]"
+                              }`}
+                            >
+                              {days <= 0 ? "Expired (Blocked)" : `${days} days left`}
+                            </p>
+                          </td>
+                          <td className="py-2.5 pr-3 text-right font-mono body-5 text-[#1C1917]">
+                            {formatNumber(b.sellable_quantity)} / {formatNumber(b.current_quantity)}
+                          </td>
+                          <td className="py-2.5 pr-3 text-right">
+                            <Badge
+                              variant={
+                                b.status === "available"
+                                  ? "emerald"
+                                  : b.status === "expired" || b.status === "damaged"
+                                    ? "crimson"
+                                    : "amber"
+                              }
+                            >
+                              {b.status}
+                            </Badge>
+                          </td>
+                          {canManageBatch && (
                             <td className="py-2.5 text-right">
-                              <Badge
-                                variant={
-                                  b.status === "available"
-                                    ? "emerald"
-                                    : b.status === "expired"
-                                      ? "rose"
-                                      : "amber"
-                                }
-                              >
-                                {b.status}
-                              </Badge>
+                              <div className="inline-flex items-center gap-1.5">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    setAdjModal({
+                                      batchId: b.id,
+                                      batchNumber: b.batch_number,
+                                      productName: prod?.name ?? `#${b.product_id}`,
+                                      currentQty: b.current_quantity,
+                                    })
+                                  }
+                                >
+                                  <SlidersHorizontal size={13} />
+                                  <span>Adjust</span>
+                                </Button>
+                                {b.status === "available" && (
+                                  <Button
+                                    size="sm"
+                                    variant="danger"
+                                    onClick={() =>
+                                      void changeBatchStatus(
+                                        b.id,
+                                        "quarantined",
+                                        "Quarantined by staff for quality inspection"
+                                      ).then(() =>
+                                        setFeedback(`Batch ${b.batch_number} moved to quarantine.`)
+                                      )
+                                    }
+                                  >
+                                    <Warning size={13} />
+                                    <span>Quarantine</span>
+                                  </Button>
+                                )}
+                              </div>
                             </td>
-                          </tr>
-                        );
-                      })
-                    )}
+                          )}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
-            ) : (
+            )}
+
+            {tab === "adjustments" && (
+              <div className="flex flex-col gap-2.5">
+                {adjustments.length === 0 ? (
+                  <p className="py-10 text-center body-6 text-[#78716C]">No stock adjustments recorded yet.</p>
+                ) : (
+                  adjustments.map((adj) => {
+                    const loc = locMap.get(adj.location_id);
+                    const prod = productMap.get(adj.product_id);
+                    return (
+                      <div
+                        key={adj.id}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#E7DDD0] bg-[#FAF6F0]/70 p-4"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono caption-3 font-semibold text-[#B91C1C]">
+                              {loc?.code ?? `Loc #${adj.location_id}`}
+                            </span>
+                            <Badge
+                              variant={
+                                adj.status === "approved"
+                                  ? "emerald"
+                                  : adj.status === "rejected"
+                                    ? "crimson"
+                                    : "amber"
+                              }
+                            >
+                              {adj.status}
+                            </Badge>
+                            <span className="font-mono caption-3 font-semibold text-[#1C1917]">
+                              {adj.quantity_change > 0 ? "+" : ""}
+                              {adj.quantity_change} units
+                            </span>
+                          </div>
+                          <p className="mt-1 body-5 font-medium text-[#1C1917]">
+                            {prod?.name ?? `Product #${adj.product_id}`}
+                          </p>
+                          <p className="caption-5 text-[#57534E]">{adj.reason}</p>
+                        </div>
+
+                        {adj.status === "pending" && canApproveAdjustment && (
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              onClick={() =>
+                                void approveStockAdjustment(adj.id)
+                                  .then(() => setFeedback(`Adjustment #${adj.id} approved and ledger updated.`))
+                                  .catch((e) => setFeedback(e instanceof Error ? e.message : "Approval failed"))
+                              }
+                            >
+                              <CheckCircle size={14} weight="bold" />
+                              <span>Approve</span>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              onClick={() =>
+                                void rejectStockAdjustment(adj.id).then(() =>
+                                  setFeedback(`Adjustment #${adj.id} rejected.`)
+                                )
+                              }
+                            >
+                              <XCircle size={14} />
+                              <span>Reject</span>
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+
+            {tab === "movements" && (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-[#272727] caption-4 text-[#78716c]">
+                    <tr className="border-b border-[#E7DDD0] caption-4 text-[#78716C]">
                       <th className="py-2 pr-3">Time</th>
                       <th className="py-2 pr-3">Location</th>
                       <th className="py-2 pr-3">Type</th>
                       <th className="py-2 pr-3">Product</th>
-                      <th className="py-2 pr-3">Reference</th>
-                      <th className="py-2 pr-3 text-right">Delta</th>
-                      <th className="py-2 text-right">Balance After</th>
+                      <th className="py-2 pr-3">Reason</th>
+                      <th className="py-2 pr-3 text-right">Change</th>
+                      <th className="py-2 text-right">Balance</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -203,40 +544,33 @@ export default function InventoryPage() {
                       const loc = locMap.get(m.location_id);
                       const prod = productMap.get(m.product_id);
                       return (
-                        <tr
-                          key={m.id}
-                          className="border-b border-[#272727]/60 hover:bg-[#1f1f1f]"
-                        >
-                          <td className="py-2.5 pr-3 font-mono caption-5 text-[#a8a29e]">
+                        <tr key={m.id} className="border-b border-[#EFE7DB] hover:bg-[#FAF6F0]">
+                          <td className="py-2.5 pr-3 font-mono caption-5 text-[#78716C]">
                             {formatTimeAgo(m.created_at)}
                           </td>
-                          <td className="py-2.5 pr-3 font-mono caption-3 text-[#10b981]">
+                          <td className="py-2.5 pr-3 font-mono caption-3 font-semibold text-[#B91C1C]">
                             {loc?.code ?? m.location_id}
                           </td>
                           <td className="py-2.5 pr-3">
-                            <Badge
-                              variant={
-                                m.quantity_change > 0 ? "cyan" : "neutral"
-                              }
-                            >
-                              {m.movement_type.replace("_", " ")}
+                            <Badge variant={m.quantity_change > 0 ? "emerald" : "crimson"}>
+                              {m.movement_type.replace(/_/g, " ")}
                             </Badge>
                           </td>
-                          <td className="py-2.5 pr-3 body-5 text-[#f5f5f4]">
+                          <td className="py-2.5 pr-3 body-5 text-[#1C1917]">
                             {prod?.name ?? `#${m.product_id}`}
                           </td>
-                          <td className="py-2.5 pr-3 font-mono caption-5 text-[#a8a29e]">
-                            {m.reference_id ?? "N/A"}
+                          <td className="py-2.5 pr-3 caption-5 text-[#57534E] max-w-xs truncate">
+                            {m.reason ?? m.reference_id ?? "System entry"}
                           </td>
                           <td
-                            className={`py-2.5 pr-3 text-right font-mono body-5 ${
-                              m.quantity_change > 0 ? "text-[#10b981]" : "text-[#fb7185]"
+                            className={`py-2.5 pr-3 text-right font-mono body-5 font-semibold ${
+                              m.quantity_change > 0 ? "text-[#047857]" : "text-[#B91C1C]"
                             }`}
                           >
                             {m.quantity_change > 0 ? "+" : ""}
                             {formatNumber(m.quantity_change)}
                           </td>
-                          <td className="py-2.5 text-right font-mono body-6 text-[#f5f5f4]">
+                          <td className="py-2.5 text-right font-mono body-6 text-[#1C1917]">
                             {formatNumber(m.balance_after)}
                           </td>
                         </tr>
@@ -248,8 +582,86 @@ export default function InventoryPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Quick Restock from Uttara Hub Dialog */}
+        <Dialog open={Boolean(restockModal)} onOpenChange={(o) => !o && setRestockModal(null)}>
+          <DialogContent>
+            <DialogTitle>Request Stock from Uttara Main Hub</DialogTitle>
+            <DialogDescription>
+              Submit a real-time restock transfer for {restockModal?.productName} to {restockModal?.toLocationName}.
+            </DialogDescription>
+            <form onSubmit={handleRestockSubmit} className="mt-4 flex flex-col gap-3">
+              <div>
+                <label className="caption-4 font-medium text-[#1C1917] block mb-1">
+                  Quantity to Request
+                </label>
+                <Input
+                  type="number"
+                  min={1}
+                  required
+                  value={restockQty}
+                  onChange={(e) => setRestockQty(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="caption-4 font-medium text-[#1C1917] block mb-1">Reason / Note</label>
+                <Input
+                  required
+                  value={restockReason}
+                  onChange={(e) => setRestockReason(e.target.value)}
+                />
+              </div>
+              <div className="mt-2 flex justify-end gap-2">
+                <Button type="button" variant="ghost" onClick={() => setRestockModal(null)}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary">
+                  Submit Restock Request
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Stock Adjustment Dialog */}
+        <Dialog open={Boolean(adjModal)} onOpenChange={(o) => !o && setAdjModal(null)}>
+          <DialogContent>
+            <DialogTitle>Request Stock Adjustment</DialogTitle>
+            <DialogDescription>
+              Batch {adjModal?.batchNumber} ({adjModal?.productName}) currently has {adjModal?.currentQty} units.
+            </DialogDescription>
+            <form onSubmit={handleAdjSubmit} className="mt-4 flex flex-col gap-3">
+              <div>
+                <label className="caption-4 font-medium text-[#1C1917] block mb-1">
+                  Quantity Delta (negative to deduct, positive to add)
+                </label>
+                <Input
+                  type="number"
+                  required
+                  value={adjDelta}
+                  onChange={(e) => setAdjDelta(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="caption-4 font-medium text-[#1C1917] block mb-1">Audit Reason</label>
+                <Input
+                  required
+                  value={adjReason}
+                  onChange={(e) => setAdjReason(e.target.value)}
+                />
+              </div>
+              <div className="mt-2 flex justify-end gap-2">
+                <Button type="button" variant="ghost" onClick={() => setAdjModal(null)}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary">
+                  Submit for Approval
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppShell>
   );
 }
-

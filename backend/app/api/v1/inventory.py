@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.audit import record_audit
 from app.core.database import get_db
 from app.core.deps import assert_location_access, get_current_user, require_roles
+from app.core.events import event_bus
 from app.models.base import utcnow
 from app.models.inventory import (
     AdjustmentStatus,
@@ -16,6 +17,8 @@ from app.models.inventory import (
     StockMovement,
     StockStatus,
 )
+from app.models.location import Location
+from app.models.product import Product
 from app.models.user import User, UserRole
 from app.schemas.inventory import (
     BatchResponse,
@@ -28,6 +31,101 @@ from app.schemas.inventory import (
 from app.services.inventory_service import record_stock_movement
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
+
+
+@router.get("/availability")
+async def network_stock_availability(
+    q: str | None = None,
+    product_id: int | None = None,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> list[dict]:
+    """Network-wide stock availability lookup across Uttara Main Hub and all branches."""
+    prod_stmt = select(Product).where(Product.is_active.is_(True)).order_by(Product.name.asc())
+    if product_id is not None:
+        prod_stmt = prod_stmt.where(Product.id == product_id)
+    if q and q.strip():
+        pattern = f"%{q.strip().lower()}%"
+        prod_stmt = prod_stmt.where(
+            Product.name.ilike(pattern)
+            | Product.sku.ilike(pattern)
+            | Product.generic_name.ilike(pattern)
+            | Product.brand_name.ilike(pattern)
+            | Product.category.ilike(pattern)
+        )
+    products = list((await db.execute(prod_stmt)).scalars().all())
+    if not products:
+        return []
+
+    locs = list(
+        (
+            await db.execute(
+                select(Location)
+                .where(Location.holds_stock.is_(True), Location.is_active.is_(True))
+                .order_by(Location.id.asc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    today = date.today()
+    p_ids = [p.id for p in products]
+    batches = list(
+        (
+            await db.execute(
+                select(InventoryBatch).where(
+                    InventoryBatch.product_id.in_(p_ids),
+                    InventoryBatch.status == StockStatus.AVAILABLE,
+                    InventoryBatch.expiry_date > today,
+                    InventoryBatch.current_quantity > InventoryBatch.reserved_quantity,
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    by_prod_loc: dict[tuple[int, int], list[InventoryBatch]] = {}
+    for b in batches:
+        by_prod_loc.setdefault((b.product_id, b.location_id), []).append(b)
+
+    response: list[dict] = []
+    for p in products:
+        loc_rows: list[dict] = []
+        total_available = 0
+        for loc in locs:
+            loc_batches = by_prod_loc.get((p.id, loc.id), [])
+            avail = sum(max(0, b.current_quantity - b.reserved_quantity) for b in loc_batches)
+            total_available += avail
+            nearest_exp = min((b.expiry_date for b in loc_batches), default=None)
+            loc_rows.append(
+                {
+                    "location_id": loc.id,
+                    "location_code": loc.code,
+                    "location_name": loc.name,
+                    "location_type": loc.location_type.value,
+                    "available_quantity": avail,
+                    "batch_count": len(loc_batches),
+                    "nearest_expiry": nearest_exp.isoformat() if nearest_exp else None,
+                }
+            )
+        response.append(
+            {
+                "product_id": p.id,
+                "sku": p.sku,
+                "name": p.name,
+                "generic_name": p.generic_name,
+                "category": p.category,
+                "requires_prescription": p.requires_prescription,
+                "retail_price": float(p.retail_price),
+                "wholesale_price": float(p.wholesale_price) if p.wholesale_price is not None else float(p.retail_price),
+                "min_stock_level": p.min_stock_level,
+                "total_available": total_available,
+                "locations": loc_rows,
+            }
+        )
+    return response
 
 
 @router.get("/batches", response_model=list[BatchResponse])
@@ -152,6 +250,13 @@ async def update_batch_status(
     )
     await db.commit()
     await db.refresh(batch)
+    await event_bus.publish(
+        "inventory.batch_status",
+        kind="system",
+        title=f"Batch {batch.batch_number} marked {batch.status.value}",
+        detail=payload.reason,
+        actor=current_user.full_name,
+    )
     return batch
 
 

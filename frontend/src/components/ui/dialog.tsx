@@ -16,10 +16,10 @@ export function DialogContent({
 }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[#000000]/80 backdrop-blur-sm" />
+      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[#1C1917]/50 backdrop-blur-xs" />
       <DialogPrimitive.Content
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 w-[calc(100%-24px)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-[#313131] bg-[#181818] p-6 text-[#f5f5f4] shadow-2xl",
+          "fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[calc(100%-24px)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-[#E7DDD0] bg-[#FFFDF9] p-6 text-[#1C1917] shadow-2xl",
           className
         )}
         {...props}
@@ -27,7 +27,7 @@ export function DialogContent({
         {children}
         <DialogPrimitive.Close
           aria-label="Close dialog"
-          className="absolute right-4 top-4 rounded-lg border border-[#313131] bg-[#1f1f1f] p-1.5 text-[#a8a29e] transition-colors duration-300 hover:bg-[#272727] hover:text-[#f5f5f4] cursor-pointer"
+          className="absolute right-4 top-4 rounded-lg border border-[#E7DDD0] bg-[#F5EFE6] p-1.5 text-[#57534E] transition-colors duration-200 hover:bg-[#FEF2F2] hover:text-[#B91C1C] cursor-pointer"
         >
           <X size={16} weight="bold" />
         </DialogPrimitive.Close>
@@ -42,7 +42,7 @@ export function DialogTitle({
 }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
-      className={cn("heading-6 text-[#f5f5f4]", className)}
+      className={cn("heading-6 text-[#1C1917]", className)}
       {...props}
     />
   );
@@ -54,9 +54,8 @@ export function DialogDescription({
 }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>) {
   return (
     <DialogPrimitive.Description
-      className={cn("body-6 text-[#a8a29e] mt-1", className)}
+      className={cn("body-6 text-[#57534E] mt-1", className)}
       {...props}
     />
   );
 }
-

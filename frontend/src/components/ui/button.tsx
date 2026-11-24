@@ -6,23 +6,23 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg border transition-[background-color,border-color,color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 cursor-pointer select-none",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg border transition-[background-color,border-color,color,transform,box-shadow] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45 cursor-pointer select-none",
   {
     variants: {
       variant: {
         primary:
-          "bg-[#10b981] text-[#000000] border-[#10b981] hover:bg-[#34d399] hover:border-[#34d399]",
+          "bg-[#B91C1C] text-[#FFFDF9] border-[#B91C1C] hover:bg-[#991B1B] hover:border-[#991B1B] shadow-xs",
         secondary:
-          "bg-[#272727] text-[#f5f5f4] border-[#313131] hover:bg-[#313131] hover:border-[#44403c]",
+          "bg-[#F5EFE6] text-[#1C1917] border-[#E2D6C5] hover:bg-[#EDE3D4] hover:border-[#D4C3AC]",
         ghost:
-          "bg-transparent text-[#a8a29e] border-transparent hover:bg-[#1f1f1f] hover:text-[#f5f5f4]",
+          "bg-transparent text-[#57534E] border-transparent hover:bg-[#F5EFE6] hover:text-[#1C1917]",
         outline:
-          "bg-[#181818] text-[#f5f5f4] border-[#313131] hover:bg-[#272727]",
+          "bg-[#FFFDF9] text-[#1C1917] border-[#DDD2C2] hover:bg-[#FAF6F0] hover:border-[#B91C1C]/40",
         danger:
-          "bg-[#f43f5e]/15 text-[#fb7185] border-[#f43f5e]/40 hover:bg-[#f43f5e]/25",
+          "bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA] hover:bg-[#FEE2E2]",
       },
       size: {
-        md: "px-3 py-2 button-sm",
+        md: "px-3.5 py-2 button-sm",
         sm: "px-3 py-1.5 button-xsm",
         lg: "px-4 py-2.5 button-md",
         icon: "h-9 w-9 p-0",
@@ -54,4 +54,3 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   }
 );
 Button.displayName = "Button";
-

@@ -28,7 +28,7 @@ export function SlidingTabs({
     <div
       role="tablist"
       className={cn(
-        "inline-flex items-center gap-1 rounded-xl border border-[#272727] bg-[#181818] p-1",
+        "inline-flex flex-wrap items-center gap-1 rounded-xl border border-[#E7DDD0] bg-[#F5EFE6] p-1",
         className
       )}
     >
@@ -42,15 +42,15 @@ export function SlidingTabs({
             aria-selected={active}
             onClick={() => onChange(opt.id)}
             className={cn(
-              "relative flex items-center gap-2 rounded-lg px-3 py-1.5 button-xsm transition-colors duration-300 cursor-pointer",
-              active ? "text-[#f5f5f4]" : "text-[#a8a29e] hover:text-[#f5f5f4]"
+              "relative flex items-center gap-2 rounded-lg px-3 py-1.5 button-xsm transition-colors duration-200 cursor-pointer",
+              active ? "text-[#991B1B]" : "text-[#57534E] hover:text-[#1C1917]"
             )}
           >
             {active && (
               <motion.span
                 layoutId={layoutId}
-                transition={{ duration: 0.45, ease: WEIGHTED_EASE }}
-                className="absolute inset-0 rounded-lg border border-[#313131] bg-[#272727]"
+                transition={{ duration: 0.35, ease: WEIGHTED_EASE }}
+                className="absolute inset-0 rounded-lg border border-[#FECACA] bg-[#FFFDF9] shadow-xs"
               />
             )}
             <span className="relative z-10">{opt.label}</span>
@@ -58,7 +58,7 @@ export function SlidingTabs({
               <span
                 className={cn(
                   "relative z-10 rounded-full px-1.5 py-0.5 font-mono caption-5",
-                  active ? "bg-[#181818] text-[#10b981]" : "bg-[#1f1f1f] text-[#78716c]"
+                  active ? "bg-[#FEF2F2] text-[#B91C1C]" : "bg-[#EAE2D6] text-[#57534E]"
                 )}
               >
                 {opt.count}
@@ -70,4 +70,3 @@ export function SlidingTabs({
     </div>
   );
 }
-

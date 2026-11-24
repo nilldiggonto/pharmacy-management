@@ -44,7 +44,7 @@ function LoginFormContent() {
       navigateAfterLogin(res.user.role);
     } else {
       setError(
-        `${res.error ?? "Unable to reach backend API."} Confirm FastAPI is running on port 8000, or use Role Preview below.`
+        `${res.error ?? "Unable to reach backend API."} Confirm FastAPI is running on port 8000, or use Role Preview.`
       );
     }
   };
@@ -62,38 +62,41 @@ function LoginFormContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#ffffff] text-[#0a0a0a] px-4 py-10">
-      <div className="mx-auto max-w-[960px]">
+    <div className="min-h-screen bg-[#FAF6F0] text-[#1C1917] px-4 py-10">
+      <div className="mx-auto max-w-[1000px]">
         <div className="flex items-center justify-between">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 title-4 text-[#525252] hover:text-[#0a0a0a] transition-colors duration-300"
+            className="inline-flex items-center gap-2 title-4 text-[#57534E] hover:text-[#B91C1C] transition-colors duration-200"
           >
             <ArrowLeft size={16} />
             <span>Back to public site</span>
           </Link>
-          <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#ff1f7a] text-[#ffffff]">
-              <FirstAidKit size={16} weight="fill" />
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#B91C1C] text-[#FFFDF9] shadow-xs">
+              <FirstAidKit size={18} weight="fill" />
             </span>
-            <span className="title-4 text-[#0a0a0a]">MedGrid Staff Portal</span>
+            <div>
+              <span className="title-4 text-[#1C1917] block leading-tight">MedGrid Admin Portal</span>
+              <span className="caption-5 text-[#991B1B] block">Uttara Main Hub & 7 Dhaka Branches</span>
+            </div>
           </div>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-12">
+        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12">
           {/* Primary FastAPI Credentials Form */}
-          <div className="rounded-2xl border border-[#e5e5e5] bg-[#ffffff] p-6 sm:p-8 lg:col-span-5">
-            <p className="caption-3 uppercase tracking-widest text-[#ff1f7a]">
-              Restricted Access
+          <div className="rounded-2xl border border-[#E7DDD0] bg-[#FFFDF9] p-6 sm:p-8 shadow-xs lg:col-span-5">
+            <p className="caption-3 font-semibold uppercase tracking-widest text-[#B91C1C]">
+              Restricted Staff Access
             </p>
-            <h1 className="mt-2 heading-5 text-[#0a0a0a]">Sign in to operations</h1>
-            <p className="mt-1 body-6 text-[#525252]">
-              Authenticate with your staff credentials to access your role workspace.
+            <h1 className="mt-2 heading-5 text-[#1C1917]">Sign in to operations</h1>
+            <p className="mt-1 body-6 text-[#57534E]">
+              Authenticate with your staff credentials to manage inventory, wholesale orders, and branch transfers in real time.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
               <div>
-                <label htmlFor="email" className="caption-4 text-[#0a0a0a] block mb-1">
+                <label htmlFor="email" className="caption-4 font-medium text-[#1C1917] block mb-1">
                   Staff email
                 </label>
                 <input
@@ -102,12 +105,12 @@ function LoginFormContent() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-[#d4d4d4] bg-[#ffffff] px-3 body-6 text-[#0a0a0a] focus:border-[#ff1f7a] focus:outline-none"
+                  className="h-10 w-full rounded-lg border border-[#DDD2C2] bg-[#FFFFFF] px-3 body-6 text-[#1C1917] focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/15 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label htmlFor="password" className="caption-4 text-[#0a0a0a] block mb-1">
+                <label htmlFor="password" className="caption-4 font-medium text-[#1C1917] block mb-1">
                   Password
                 </label>
                 <input
@@ -116,12 +119,12 @@ function LoginFormContent() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-[#d4d4d4] bg-[#ffffff] px-3 body-6 text-[#0a0a0a] focus:border-[#ff1f7a] focus:outline-none"
+                  className="h-10 w-full rounded-lg border border-[#DDD2C2] bg-[#FFFFFF] px-3 body-6 text-[#1C1917] focus:border-[#B91C1C] focus:ring-2 focus:ring-[#B91C1C]/15 focus:outline-none"
                 />
               </div>
 
               {error && (
-                <div className="rounded-lg border border-[#ff1f7a]/30 bg-[#fff0f6] p-3 caption-4 text-[#be125c]">
+                <div className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-3 caption-4 text-[#991B1B]">
                   {error}
                 </div>
               )}
@@ -129,43 +132,41 @@ function LoginFormContent() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#ff1f7a] px-4 button-sm text-[#ffffff] transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[#e11d74] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#B91C1C] px-4 button-sm text-[#FFFDF9] transition-[background-color,transform] duration-200 hover:bg-[#991B1B] active:scale-[0.98] disabled:opacity-50 cursor-pointer shadow-xs"
               >
                 <SignIn size={16} weight="bold" />
                 <span>{submitting ? "Signing in..." : "Sign in via FastAPI"}</span>
               </button>
 
-              <p className="flex items-center gap-1.5 caption-5 text-[#737373]">
+              <p className="flex items-center gap-1.5 caption-5 text-[#78716C]">
                 <LockSimple size={13} />
-                Protected by JWT access rotation and location scoped RBAC.
+                Protected by JWT access rotation, SSE real-time sync, and location RBAC.
               </p>
             </form>
           </div>
 
           {/* Multi Role Directory & Quick Switch */}
-          <div className="rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-6 sm:p-8 lg:col-span-7">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <h2 className="title-2 text-[#0a0a0a]">Seeded staff roles</h2>
-                <p className="caption-4 text-[#525252]">
-                  Click Fill to load credentials for live FastAPI login, or Preview to test role permissions immediately.
-                </p>
-              </div>
+          <div className="rounded-2xl border border-[#E7DDD0] bg-[#FFFDF9] p-6 sm:p-8 shadow-xs lg:col-span-7">
+            <div>
+              <h2 className="title-2 text-[#1C1917]">Seeded staff roles (Live PostgreSQL)</h2>
+              <p className="caption-4 text-[#57534E] mt-0.5">
+                Click Fill Login to sign in with live backend data for any role, or Preview to test permissions offline.
+              </p>
             </div>
 
             <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {ROLE_LIST.map((item) => (
                 <div
                   key={item.role}
-                  className="flex flex-col justify-between gap-2.5 rounded-xl border border-[#e5e5e5] bg-[#ffffff] p-3.5"
+                  className="flex flex-col justify-between gap-2.5 rounded-xl border border-[#EAE2D6] bg-[#FAF6F0]/70 p-3.5 transition-colors hover:border-[#FECACA]"
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <UserCircle size={17} weight="duotone" className="text-[#ff1f7a]" />
-                      <span className="title-4 text-[#0a0a0a]">{item.label}</span>
+                      <UserCircle size={18} weight="duotone" className="text-[#B91C1C]" />
+                      <span className="title-4 text-[#1C1917]">{item.label}</span>
                     </div>
-                    <p className="mt-1 caption-5 text-[#525252]">{item.description}</p>
-                    <p className="mt-1.5 font-mono caption-5 text-[#737373] truncate">
+                    <p className="mt-1 caption-5 text-[#57534E]">{item.description}</p>
+                    <p className="mt-1.5 font-mono caption-5 text-[#78716C] truncate">
                       {item.demoEmail}
                     </p>
                   </div>
@@ -174,14 +175,14 @@ function LoginFormContent() {
                     <button
                       type="button"
                       onClick={() => handleQuickFill(item.role)}
-                      className="flex-1 rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-2.5 py-1.5 button-xsm text-[#0a0a0a] hover:border-[#ff1f7a]/50 cursor-pointer"
+                      className="flex-1 rounded-lg border border-[#DDD2C2] bg-[#FFFDF9] px-2.5 py-1.5 button-xsm text-[#1C1917] hover:border-[#B91C1C]/50 hover:text-[#991B1B] cursor-pointer transition-colors"
                     >
                       Fill Login
                     </button>
                     <button
                       type="button"
                       onClick={() => handlePreviewRole(item.role)}
-                      className="flex-1 rounded-lg bg-[#fff0f6] border border-[#ff1f7a]/25 px-2.5 py-1.5 button-xsm text-[#be125c] hover:bg-[#ff1f7a] hover:text-[#ffffff] transition-colors duration-300 cursor-pointer"
+                      className="flex-1 rounded-lg bg-[#FEF2F2] border border-[#FECACA] px-2.5 py-1.5 button-xsm text-[#991B1B] hover:bg-[#B91C1C] hover:text-[#FFFDF9] transition-colors cursor-pointer"
                     >
                       Preview
                     </button>
@@ -198,7 +199,7 @@ function LoginFormContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#ffffff]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#FAF6F0]" />}>
       <LoginFormContent />
     </Suspense>
   );

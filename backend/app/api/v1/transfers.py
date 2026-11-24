@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 from app.core.audit import record_audit
 from app.core.database import get_db
 from app.core.deps import assert_location_access, get_current_user, require_roles
+from app.core.events import event_bus
 from app.models.base import utcnow
 from app.models.inventory import MovementType, StockStatus
 from app.models.location import Location
@@ -52,6 +53,7 @@ async def create_transfer_request(
             UserRole.OWNER,
             UserRole.HEAD_OFFICE_MANAGER,
             UserRole.BRANCH_MANAGER,
+            UserRole.PHARMACIST,
             UserRole.INVENTORY_OFFICER,
         )
     ),
@@ -125,7 +127,20 @@ async def create_transfer_request(
         },
     )
     await db.commit()
-    return await _load_transfer(db, transfer.id)  # type: ignore[return-value]
+    loaded = await _load_transfer(db, transfer.id)
+    loc_by_id = {loc.id: loc.code for loc in locs}
+    total_qty = sum(i.requested_quantity for i in payload.items)
+    await event_bus.publish(
+        "transfer.created",
+        kind="transfer",
+        title=f"Restock requested ({transfer.transfer_number})",
+        detail=f"{loc_by_id.get(transfer.to_location_id, 'BR')} requested {total_qty} units from {loc_by_id.get(transfer.from_location_id, 'WH-01')}",
+        actor=current_user.full_name,
+        from_code=loc_by_id.get(transfer.from_location_id),
+        to_code=loc_by_id.get(transfer.to_location_id),
+        quantity=total_qty,
+    )
+    return loaded  # type: ignore[return-value]
 
 
 @router.get("", response_model=list[TransferResponse])
@@ -194,7 +209,25 @@ async def approve_transfer(
         location_id=transfer.from_location_id,
     )
     await db.commit()
-    return await _load_transfer(db, transfer.id)  # type: ignore[return-value]
+    loaded = await _load_transfer(db, transfer.id)
+    loc_rows = (
+        await db.execute(
+            select(Location).where(Location.id.in_([transfer.from_location_id, transfer.to_location_id]))
+        )
+    ).scalars().all()
+    loc_by_id = {loc.id: loc.code for loc in loc_rows}
+    total_qty = sum(i.approved_quantity for i in transfer.items)
+    await event_bus.publish(
+        "transfer.approved",
+        kind="transfer",
+        title=f"Transfer approved ({transfer.transfer_number})",
+        detail=f"Approved {total_qty} units from {loc_by_id.get(transfer.from_location_id, 'WH-01')} to {loc_by_id.get(transfer.to_location_id, 'BR')}",
+        actor=current_user.full_name,
+        from_code=loc_by_id.get(transfer.from_location_id),
+        to_code=loc_by_id.get(transfer.to_location_id),
+        quantity=total_qty,
+    )
+    return loaded  # type: ignore[return-value]
 
 
 @router.post("/{transfer_id}/dispatch", response_model=TransferResponse)
@@ -264,7 +297,25 @@ async def dispatch_transfer(
         new_values={"status": transfer.status.value},
     )
     await db.commit()
-    return await _load_transfer(db, transfer.id)  # type: ignore[return-value]
+    loaded = await _load_transfer(db, transfer.id)
+    loc_rows = (
+        await db.execute(
+            select(Location).where(Location.id.in_([transfer.from_location_id, transfer.to_location_id]))
+        )
+    ).scalars().all()
+    loc_by_id = {loc.id: loc.code for loc in loc_rows}
+    total_qty = sum(i.dispatched_quantity for i in transfer.items)
+    await event_bus.publish(
+        "transfer.dispatched",
+        kind="transfer",
+        title=f"Stock dispatched ({transfer.transfer_number})",
+        detail=f"{loc_by_id.get(transfer.from_location_id, 'WH-01')} sent {total_qty} units to {loc_by_id.get(transfer.to_location_id, 'BR')}",
+        actor=current_user.full_name,
+        from_code=loc_by_id.get(transfer.from_location_id),
+        to_code=loc_by_id.get(transfer.to_location_id),
+        quantity=total_qty,
+    )
+    return loaded  # type: ignore[return-value]
 
 
 @router.post("/{transfer_id}/receive", response_model=TransferResponse)
@@ -277,6 +328,7 @@ async def receive_transfer(
             UserRole.OWNER,
             UserRole.HEAD_OFFICE_MANAGER,
             UserRole.BRANCH_MANAGER,
+            UserRole.PHARMACIST,
             UserRole.INVENTORY_OFFICER,
         )
     ),
@@ -360,4 +412,22 @@ async def receive_transfer(
         reason=payload.discrepancy_notes,
     )
     await db.commit()
-    return await _load_transfer(db, transfer.id)  # type: ignore[return-value]
+    loaded = await _load_transfer(db, transfer.id)
+    loc_rows = (
+        await db.execute(
+            select(Location).where(Location.id.in_([transfer.from_location_id, transfer.to_location_id]))
+        )
+    ).scalars().all()
+    loc_by_id = {loc.id: loc.code for loc in loc_rows}
+    total_rec = sum(i.received_quantity for i in transfer.items)
+    await event_bus.publish(
+        "transfer.received",
+        kind="receipt",
+        title=f"Transfer received ({transfer.transfer_number})",
+        detail=f"{loc_by_id.get(transfer.to_location_id, 'BR')} confirmed {total_rec} units ({transfer.status.value})",
+        actor=current_user.full_name,
+        from_code=loc_by_id.get(transfer.from_location_id),
+        to_code=loc_by_id.get(transfer.to_location_id),
+        quantity=total_rec,
+    )
+    return loaded  # type: ignore[return-value]

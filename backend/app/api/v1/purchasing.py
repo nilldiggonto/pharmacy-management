@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.audit import record_audit
 from app.core.database import get_db
 from app.core.deps import assert_location_access, require_roles
+from app.core.events import event_bus
 from app.models.base import utcnow
 from app.models.inventory import MovementType, StockStatus
 from app.models.location import Location
@@ -369,5 +370,19 @@ async def receive_goods(
     )
     await db.commit()
     await db.refresh(receipt)
+    dest_loc = (
+        await db.execute(select(Location).where(Location.id == po.destination_location_id))
+    ).scalar_one_or_none()
+    total_rec = sum(line.quantity_received for line in payload.items)
+    await event_bus.publish(
+        "purchasing.goods_received",
+        kind="receipt",
+        title=f"Goods received ({receipt.receipt_number})",
+        detail=f"{dest_loc.name if dest_loc else 'Uttara Hub'} received {total_rec} units on {po.po_number}",
+        actor=current_user.full_name,
+        from_code="SUPPLIER",
+        to_code=dest_loc.code if dest_loc else "WH-01",
+        quantity=total_rec,
+    )
     return receipt
 
