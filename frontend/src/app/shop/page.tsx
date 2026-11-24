@@ -1,19 +1,11 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import Link from "next/link";
-import { motion } from "motion/react";
-import {
-  LockSimple,
-  MagnifyingGlass,
-  MapPin,
-  Plus,
-  ShieldCheck,
-} from "@phosphor-icons/react";
+import { MagnifyingGlass, ShieldCheck } from "@phosphor-icons/react";
 import { PublicHeader } from "@/components/public/public-header";
+import { ProductCard } from "@/components/public/product-card";
 import { usePublicCart } from "@/context/public-cart-context";
 import { PUBLIC_PRODUCTS, type PublicProduct } from "@/lib/public-catalog";
-import { formatCurrency, WEIGHTED_EASE } from "@/lib/utils";
 
 export default function PublicShopPage() {
   const { addItem, setDrawerOpen } = usePublicCart();
@@ -53,22 +45,21 @@ export default function PublicShopPage() {
       <main id="main-content" className="mx-auto max-w-[1140px] px-4 py-12 sm:px-6">
         <div className="max-w-[680px]">
           <p className="caption-3 uppercase tracking-widest text-[#ff1f7a]">
-            Public Product Catalogue
+            Public Pharmacy Store
           </p>
           <h1 className="mt-2 heading-3 text-[#0a0a0a]">
-            Verified medicines and everyday pharmacy care
+            Verified medicines and everyday health care
           </h1>
           <p className="mt-3 body-5 text-[#525252]">
             Approved non prescription essentials can be reserved online with per order household limits. Prescription medicines require in branch pharmacist review and cannot be purchased online.
           </p>
         </div>
 
-        {/* Search & Filter Controls */}
         <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#e5e5e5] bg-[#fafafa] p-4">
           <div className="relative flex-1 min-w-[220px] max-w-md">
             <MagnifyingGlass
               size={16}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#737373]"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#ff1f7a]"
             />
             <input
               value={query}
@@ -78,7 +69,7 @@ export default function PublicShopPage() {
             />
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {(
               [
                 { id: "all", label: "All Products" },
@@ -90,7 +81,7 @@ export default function PublicShopPage() {
                 key={opt.id}
                 type="button"
                 onClick={() => setFilter(opt.id)}
-                className={`rounded-lg border px-3 py-1.5 caption-4 transition-colors duration-300 cursor-pointer ${
+                className={`rounded-full border px-3.5 py-1.5 caption-4 transition-colors duration-300 cursor-pointer ${
                   filter === opt.id
                     ? "border-[#ff1f7a] bg-[#ff1f7a] text-[#ffffff]"
                     : "border-[#e5e5e5] bg-[#ffffff] text-[#525252] hover:text-[#0a0a0a]"
@@ -108,68 +99,14 @@ export default function PublicShopPage() {
           </div>
         )}
 
-        {/* Product Grid */}
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((product, idx) => (
-            <motion.article
+            <ProductCard
               key={product.id}
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.04, duration: 0.45, ease: WEIGHTED_EASE }}
-              className="flex flex-col justify-between rounded-2xl border border-[#e5e5e5] bg-[#ffffff] p-5 transition-[border-color] duration-300 hover:border-[#ff1f7a]/50"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="rounded-full border border-[#e5e5e5] bg-[#fafafa] px-2.5 py-0.5 caption-5 text-[#525252]">
-                    {product.category}
-                  </span>
-                  {product.purchasableOnline ? (
-                    <span className="font-mono caption-5 text-[#ff1f7a]">
-                      Limit {product.maxOrderQty} / order
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#fff0f6] px-2.5 py-0.5 caption-5 text-[#be125c]">
-                      <LockSimple size={12} weight="fill" />
-                      Rx Required
-                    </span>
-                  )}
-                </div>
-
-                <h2 className="mt-3 title-3 text-[#0a0a0a]">{product.name}</h2>
-                <p className="mt-0.5 caption-4 text-[#737373]">
-                  {product.genericName} · {product.brand}
-                </p>
-                <p className="mt-2 body-6 text-[#525252]">{product.summary}</p>
-              </div>
-
-              <div className="mt-5 flex items-center justify-between border-t border-[#f0f0f0] pt-4">
-                <div>
-                  <p className="font-mono title-2 text-[#0a0a0a]">
-                    {formatCurrency(product.price)}
-                  </p>
-                  <p className="caption-5 text-[#737373]">{product.availabilityLabel}</p>
-                </div>
-
-                {product.purchasableOnline ? (
-                  <button
-                    type="button"
-                    onClick={() => handleAdd(product)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#ff1f7a] px-3 py-2 button-xsm text-[#ffffff] transition-colors duration-300 hover:bg-[#e11d74] cursor-pointer"
-                  >
-                    <Plus size={14} weight="bold" />
-                    <span>Add to Bag</span>
-                  </button>
-                ) : (
-                  <Link
-                    href="/branches"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-3 py-2 button-xsm text-[#0a0a0a] hover:border-[#ff1f7a] transition-colors duration-300"
-                  >
-                    <MapPin size={14} className="text-[#ff1f7a]" />
-                    <span>Find Branch</span>
-                  </Link>
-                )}
-              </div>
-            </motion.article>
+              product={product}
+              index={idx}
+              onAdd={handleAdd}
+            />
           ))}
         </div>
 
@@ -183,4 +120,3 @@ export default function PublicShopPage() {
     </div>
   );
 }
-

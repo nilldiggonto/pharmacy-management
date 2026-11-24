@@ -13,19 +13,43 @@ export interface PublicBranch {
   services: string[];
 }
 
+export type ThumbnailType =
+  | "blister-box"
+  | "capsule-strip"
+  | "vitamin-bottle"
+  | "sachet-pack"
+  | "allergy-pack"
+  | "effervescent-tube"
+  | "insulin-pen"
+  | "antibiotic-box"
+  | "cardio-box";
+
 export interface PublicProduct {
   id: string;
   sku: string;
   name: string;
   genericName: string;
   brand: string;
-  category: "Pain & Fever" | "Vitamins & Care" | "Digestive" | "Cold Chain Rx" | "Antibiotic Rx" | "Cardio & Endocrine Rx";
+  category:
+    | "Pain & Fever"
+    | "Vitamins & Care"
+    | "Digestive"
+    | "Cold Chain Rx"
+    | "Antibiotic Rx"
+    | "Cardio & Endocrine Rx";
   strength: string;
   packLabel: string;
   price: number;
+  compareAtPrice?: number;
+  rating: number;
+  reviewCount: number;
+  thumbnailType: ThumbnailType;
   purchasableOnline: boolean;
   maxOrderQty: number;
-  availabilityLabel: "Available at all Dhaka branches" | "Available at selected branches" | "Contact branch pharmacist";
+  availabilityLabel:
+    | "Available at all Dhaka branches"
+    | "Available at selected branches"
+    | "Contact branch pharmacist";
   summary: string;
 }
 
@@ -147,6 +171,10 @@ export const PUBLIC_PRODUCTS: PublicProduct[] = [
     strength: "500mg",
     packLabel: "Strip of 10 tablets",
     price: 1.25,
+    compareAtPrice: 1.5,
+    rating: 4.9,
+    reviewCount: 412,
+    thumbnailType: "blister-box",
     purchasableOnline: true,
     maxOrderQty: 3,
     availabilityLabel: "Available at all Dhaka branches",
@@ -162,6 +190,10 @@ export const PUBLIC_PRODUCTS: PublicProduct[] = [
     strength: "20mg",
     packLabel: "Strip of 10 capsules",
     price: 3.15,
+    compareAtPrice: 3.6,
+    rating: 4.8,
+    reviewCount: 289,
+    thumbnailType: "capsule-strip",
     purchasableOnline: true,
     maxOrderQty: 2,
     availabilityLabel: "Available at all Dhaka branches",
@@ -177,6 +209,10 @@ export const PUBLIC_PRODUCTS: PublicProduct[] = [
     strength: "2000 IU",
     packLabel: "Bottle of 30 softgels",
     price: 5.4,
+    compareAtPrice: 6.5,
+    rating: 4.9,
+    reviewCount: 194,
+    thumbnailType: "vitamin-bottle",
     purchasableOnline: true,
     maxOrderQty: 2,
     availabilityLabel: "Available at all Dhaka branches",
@@ -192,6 +228,9 @@ export const PUBLIC_PRODUCTS: PublicProduct[] = [
     strength: "WHO Standard",
     packLabel: "Box of 10 sachets",
     price: 2.1,
+    rating: 4.9,
+    reviewCount: 521,
+    thumbnailType: "sachet-pack",
     purchasableOnline: true,
     maxOrderQty: 4,
     availabilityLabel: "Available at all Dhaka branches",
@@ -207,6 +246,9 @@ export const PUBLIC_PRODUCTS: PublicProduct[] = [
     strength: "10mg",
     packLabel: "Strip of 10 tablets",
     price: 1.85,
+    rating: 4.7,
+    reviewCount: 163,
+    thumbnailType: "allergy-pack",
     purchasableOnline: true,
     maxOrderQty: 2,
     availabilityLabel: "Available at selected branches",
@@ -222,6 +264,10 @@ export const PUBLIC_PRODUCTS: PublicProduct[] = [
     strength: "500mg / 15mg",
     packLabel: "Tube of 20 tablets",
     price: 3.6,
+    compareAtPrice: 4.2,
+    rating: 4.8,
+    reviewCount: 247,
+    thumbnailType: "effervescent-tube",
     purchasableOnline: true,
     maxOrderQty: 3,
     availabilityLabel: "Available at all Dhaka branches",
@@ -237,6 +283,9 @@ export const PUBLIC_PRODUCTS: PublicProduct[] = [
     strength: "100IU/mL",
     packLabel: "1 Prefilled Pen (2°C to 8°C)",
     price: 24.9,
+    rating: 5.0,
+    reviewCount: 118,
+    thumbnailType: "insulin-pen",
     purchasableOnline: false,
     maxOrderQty: 0,
     availabilityLabel: "Available at selected branches",
@@ -252,6 +301,9 @@ export const PUBLIC_PRODUCTS: PublicProduct[] = [
     strength: "500mg",
     packLabel: "Strip of 10 capsules",
     price: 6.45,
+    rating: 4.8,
+    reviewCount: 95,
+    thumbnailType: "antibiotic-box",
     purchasableOnline: false,
     maxOrderQty: 0,
     availabilityLabel: "Available at selected branches",
@@ -267,10 +319,12 @@ export const PUBLIC_PRODUCTS: PublicProduct[] = [
     strength: "20mg",
     packLabel: "Strip of 10 tablets",
     price: 8.25,
+    rating: 4.9,
+    reviewCount: 142,
+    thumbnailType: "cardio-box",
     purchasableOnline: false,
     maxOrderQty: 0,
     availabilityLabel: "Contact branch pharmacist",
     summary: "Prescription cardiovascular therapy. Requires licensed pharmacist verification.",
   },
 ];
-
