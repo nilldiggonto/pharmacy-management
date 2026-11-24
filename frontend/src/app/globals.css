@@ -31,16 +31,16 @@
   }
 
   html {
-    background-color: #000000;
-    color: #f5f5f4;
+    background-color: #ffffff;
+    color: #0a0a0a;
     font-family: var(--font-lexend), ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    background-color: #000000;
-    color: #f5f5f4;
+    background-color: #ffffff;
+    color: #0a0a0a;
     min-height: 100vh;
     overflow-x: hidden;
   }

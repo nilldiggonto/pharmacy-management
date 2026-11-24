@@ -16,9 +16,9 @@ import {
   DEMO_SALES,
   DEMO_SUPPLIERS,
   DEMO_TRANSFERS,
-  DEMO_USER,
   INITIAL_LIVE_FLOWS,
 } from "@/lib/mock-telemetry";
+import { ROLE_DIRECTORY } from "@/lib/rbac";
 import type {
   AuditLog,
   Batch,
@@ -34,12 +34,17 @@ import type {
   Supplier,
   Transfer,
   User,
+  UserRole,
 } from "@/types/api";
 
+const DEMO_ROLE_KEY = "pm_demo_role";
+
 interface AppContextValue {
-  mode: "live_api" | "telemetry_demo";
+  mode: "live_api" | "role_preview" | "unauthenticated";
+  isAuthenticated: boolean;
+  authChecked: boolean;
   loading: boolean;
-  user: User;
+  user: User | null;
   locations: Location[];
   products: Product[];
   suppliers: Supplier[];
@@ -57,7 +62,8 @@ interface AppContextValue {
   setSimulationRunning: (running: boolean) => void;
   selectedLocationCode: string | null;
   setSelectedLocationCode: (code: string | null) => void;
-  signIn: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  signIn: (email: string, password: string) => Promise<{ ok: boolean; user?: User; error?: string }>;
+  signInAsRolePreview: (role: UserRole) => User;
   signOut: () => Promise<void>;
   refreshData: () => Promise<void>;
   triggerTransferDispatch: (transferId: number) => Promise<void>;
@@ -73,10 +79,37 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null);
 
+function buildPreviewUser(role: UserRole): User {
+  const meta = ROLE_DIRECTORY[role];
+  return {
+    id: 100,
+    email: meta.demoEmail,
+    full_name: meta.demoFullName,
+    phone: "+880 1711 402918",
+    role,
+    is_active: true,
+    can_access_all_locations:
+      role === "owner" ||
+      role === "head_office_manager" ||
+      role === "inventory_officer" ||
+      role === "procurement_officer" ||
+      role === "accountant",
+    location_ids:
+      role === "branch_manager" || role === "pharmacist" || role === "cashier"
+        ? [3]
+        : [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+}
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setMode] = useState<"live_api" | "telemetry_demo">("telemetry_demo");
+  const [mode, setMode] = useState<"live_api" | "role_preview" | "unauthenticated">(
+    "unauthenticated"
+  );
+  const [authChecked, setAuthChecked] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User>(DEMO_USER);
+  const [user, setUser] = useState<User | null>(null);
   const [locations, setLocations] = useState<Location[]>(DEMO_LOCATIONS);
   const [products, setProducts] = useState<Product[]>(DEMO_PRODUCTS);
   const [suppliers, setSuppliers] = useState<Supplier[]>(DEMO_SUPPLIERS);
@@ -93,78 +126,96 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [simulationRunning, setSimulationRunning] = useState(true);
   const [selectedLocationCode, setSelectedLocationCode] = useState<string | null>("CW-01");
 
+  const isAuthenticated = user !== null && mode !== "unauthenticated";
+
+  const loadLiveData = useCallback(async () => {
+    const [
+      me,
+      dash,
+      locs,
+      prods,
+      sups,
+      btchs,
+      movs,
+      pos,
+      trfs,
+      sls,
+      low,
+      exp,
+      aud,
+    ] = await Promise.all([
+      api.me(),
+      api.getDashboard().catch(() => DEMO_DASHBOARD),
+      api.getLocations().catch(() => []),
+      api.getProducts().catch(() => []),
+      api.getSuppliers().catch(() => []),
+      api.getBatches().catch(() => []),
+      api.getMovements().catch(() => []),
+      api.getPurchaseOrders().catch(() => []),
+      api.getTransfers().catch(() => []),
+      api.getSales().catch(() => []),
+      api.getLowStock().catch(() => []),
+      api.getExpiryAlerts(90).catch(() => []),
+      api.getAuditLogs().catch(() => []),
+    ]);
+
+    setUser(me);
+    setDashboard(dash);
+    if (locs.length > 0) setLocations(locs);
+    if (prods.length > 0) setProducts(prods);
+    setSuppliers(sups);
+    setBatches(btchs);
+    setMovements(movs);
+    setPurchaseOrders(pos);
+    setTransfers(trfs);
+    setSales(sls);
+    setLowStock(low);
+    setExpiryAlerts(exp);
+    setAuditLogs(aud);
+    setMode("live_api");
+    return me;
+  }, []);
+
   const refreshData = useCallback(async () => {
     const token = getStoredToken();
-    if (!token) {
-      setMode("telemetry_demo");
-      setLoading(false);
-      return;
+    if (token) {
+      try {
+        await loadLiveData();
+        setAuthChecked(true);
+        setLoading(false);
+        return;
+      } catch {
+        clearStoredTokens();
+      }
     }
 
-    try {
-      const [
-        me,
-        dash,
-        locs,
-        prods,
-        sups,
-        btchs,
-        movs,
-        pos,
-        trfs,
-        sls,
-        low,
-        exp,
-        aud,
-      ] = await Promise.all([
-        api.me(),
-        api.getDashboard(),
-        api.getLocations(),
-        api.getProducts(),
-        api.getSuppliers().catch(() => []),
-        api.getBatches(),
-        api.getMovements(),
-        api.getPurchaseOrders().catch(() => []),
-        api.getTransfers(),
-        api.getSales().catch(() => []),
-        api.getLowStock().catch(() => []),
-        api.getExpiryAlerts(90).catch(() => []),
-        api.getAuditLogs().catch(() => []),
-      ]);
-
-      setUser(me);
-      setDashboard(dash);
-      setLocations(locs);
-      setProducts(prods);
-      setSuppliers(sups);
-      setBatches(btchs);
-      setMovements(movs);
-      setPurchaseOrders(pos);
-      setTransfers(trfs);
-      setSales(sls);
-      setLowStock(low);
-      setExpiryAlerts(exp);
-      setAuditLogs(aud);
-      setMode("live_api");
-    } catch {
-      setMode("telemetry_demo");
-    } finally {
-      setLoading(false);
+    const storedDemoRole =
+      typeof window !== "undefined"
+        ? (sessionStorage.getItem(DEMO_ROLE_KEY) as UserRole | null)
+        : null;
+    if (storedDemoRole && ROLE_DIRECTORY[storedDemoRole]) {
+      setUser(buildPreviewUser(storedDemoRole));
+      setMode("role_preview");
+    } else {
+      setUser(null);
+      setMode("unauthenticated");
     }
-  }, []);
+    setAuthChecked(true);
+    setLoading(false);
+  }, [loadLiveData]);
 
   useEffect(() => {
     void refreshData();
   }, [refreshData]);
 
-  // Real time telemetry stream for isometric visualization
+  // Real time telemetry stream for isometric visualization (only when signed in)
   useEffect(() => {
-    if (!simulationRunning) return;
+    if (!simulationRunning || !isAuthenticated) return;
     const interval = setInterval(() => {
       const ev = createSimulatedFlowEvent();
       setLiveFlows((prev) => [ev, ...prev].slice(0, 24));
 
-      if (mode === "telemetry_demo" && ev.kind === "sale") {
+      if (mode === "role_preview" && ev.kind === "sale") {
         setDashboard((prev) => ({
           ...prev,
           sales_today: Number((prev.sales_today + ev.quantity * 6.45).toFixed(2)),
@@ -183,15 +234,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, 3600);
 
     return () => clearInterval(interval);
-  }, [simulationRunning, mode]);
+  }, [simulationRunning, isAuthenticated, mode]);
 
   const signIn = async (email: string, password: string) => {
     try {
       const res = await api.login(email, password);
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem(DEMO_ROLE_KEY);
+      }
       setStoredTokens(res.access_token, res.refresh_token);
       setUser(res.user);
-      await refreshData();
-      return { ok: true };
+      setMode("live_api");
+      await loadLiveData();
+      return { ok: true, user: res.user };
     } catch (err) {
       return {
         ok: false,
@@ -200,15 +255,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInAsRolePreview = (role: UserRole): User => {
+    clearStoredTokens();
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(DEMO_ROLE_KEY, role);
+    }
+    const preview = buildPreviewUser(role);
+    setUser(preview);
+    setMode("role_preview");
+    setAuthChecked(true);
+    return preview;
+  };
+
   const signOut = async () => {
-    try {
-      await api.logout();
-    } catch {
-      // ignore if offline
+    if (mode === "live_api") {
+      try {
+        await api.logout();
+      } catch {
+        // ignore if offline
+      }
     }
     clearStoredTokens();
-    setMode("telemetry_demo");
-    setUser(DEMO_USER);
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem(DEMO_ROLE_KEY);
+    }
+    setUser(null);
+    setMode("unauthenticated");
   };
 
   const triggerTransferDispatch = async (transferId: number) => {
@@ -292,7 +364,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       id: Date.now(),
       invoice_number: `INV-${loc?.code ?? "BR01"}-${Math.floor(1000 + Math.random() * 8999)}`,
       location_id: payload.locationId,
-      cashier_user_id: user.id,
+      cashier_user_id: user?.id ?? 1,
       customer_name: payload.customerName || "Walk In Customer",
       customer_phone: null,
       status: "completed",
@@ -374,6 +446,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider
       value={{
         mode,
+        isAuthenticated,
+        authChecked,
         loading,
         user,
         locations,
@@ -394,6 +468,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         selectedLocationCode,
         setSelectedLocationCode,
         signIn,
+        signInAsRolePreview,
         signOut,
         refreshData,
         triggerTransferDispatch,
@@ -412,4 +487,3 @@ export function useApp() {
   if (!ctx) throw new Error("useApp must be used inside AppProvider");
   return ctx;
 }
-

@@ -1,29 +1,31 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowsLeftRight,
   Buildings,
   Cube,
   List,
+  LockSimple,
   Package,
   Pill,
   ShoppingCartSimple,
-  SignIn,
   SignOut,
   Truck,
   X,
 } from "@phosphor-icons/react";
 import { useApp } from "@/context/app-context";
+import { canAccessRoute, getDefaultRouteForRole, ROLE_DIRECTORY, type AppRoute } from "@/lib/rbac";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn, WEIGHTED_EASE } from "@/lib/utils";
 
-const NAV_ITEMS = [
-  { href: "/", label: "Isometric View", icon: Cube },
+const NAV_ITEMS: { href: AppRoute; label: string; icon: React.ElementType }[] = [
+  { href: "/dashboard", label: "Isometric View", icon: Cube },
   { href: "/inventory", label: "Inventory", icon: Package },
   { href: "/products", label: "Catalogue", icon: Pill },
   { href: "/purchasing", label: "Purchasing", icon: Truck },
@@ -34,33 +36,60 @@ const NAV_ITEMS = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user, mode, signOut } = useApp();
+  const router = useRouter();
+  const { user, mode, isAuthenticated, authChecked, signOut } = useApp();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    if (authChecked && !isAuthenticated) {
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+    }
+  }, [authChecked, isAuthenticated, pathname, router]);
+
+  if (!authChecked || !isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen bg-[#000000] p-6">
+        <div className="mx-auto max-w-[1600px] flex flex-col gap-4">
+          <Skeleton className="h-14 w-full rounded-2xl" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
+          </div>
+          <Skeleton className="h-[480px] w-full rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
+  const allowedNav = NAV_ITEMS.filter((item) => canAccessRoute(user.role, item.href));
+  const routeAllowed = canAccessRoute(user.role, pathname);
+  const roleMeta = ROLE_DIRECTORY[user.role];
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.replace("/");
+  };
 
   return (
     <div className="min-h-screen bg-[#000000] text-[#f5f5f4]">
-      {/* Floating compact top bar (B7 navigation) */}
       <header className="sticky top-0 z-40 px-3 pt-3 sm:px-4">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 rounded-2xl border border-[#272727] bg-[#181818]/90 px-3 py-2 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <Link
-              href="/"
+              href={getDefaultRouteForRole(user.role)}
               className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors duration-300 hover:bg-[#272727]"
             >
               <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#10b981]/40 bg-[#10b981]/15 text-[#10b981]">
                 <Cube size={16} weight="duotone" />
               </span>
-              <span className="title-4 text-[#f5f5f4] tracking-tight">
-                MedGrid
-              </span>
+              <span className="title-4 text-[#f5f5f4] tracking-tight">MedGrid</span>
             </Link>
 
             <nav aria-label="Primary navigation" className="hidden lg:flex items-center gap-1">
-              {NAV_ITEMS.map((item) => {
-                const active =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname.startsWith(item.href);
+              {allowedNav.map((item) => {
+                const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
                 const Icon = item.icon;
                 return (
                   <Link
@@ -95,28 +124,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               pulse
               className="hidden sm:inline-flex"
             >
-              {mode === "live_api" ? "Live API" : "Telemetry Demo"}
+              {mode === "live_api" ? "Live API" : "Role Preview"}
             </Badge>
 
             <div className="hidden md:flex items-center gap-2 rounded-lg border border-[#272727] bg-[#1f1f1f] px-2.5 py-1">
               <span className="h-2 w-2 rounded-full bg-[#10b981]" />
               <span className="caption-4 text-[#f5f5f4]">{user.full_name}</span>
-              <span className="caption-5 text-[#78716c] uppercase">{user.role}</span>
+              <span className="caption-5 text-[#10b981] uppercase">
+                {roleMeta?.label ?? user.role}
+              </span>
             </div>
 
-            {mode === "live_api" ? (
-              <Button size="sm" variant="ghost" onClick={() => void signOut()}>
-                <SignOut size={15} />
-                <span className="hidden sm:inline">Sign out</span>
-              </Button>
-            ) : (
-              <Button size="sm" variant="outline" asChild>
-                <Link href="/login">
-                  <SignIn size={15} />
-                  <span>Connect API</span>
-                </Link>
-              </Button>
-            )}
+            <Button size="sm" variant="ghost" onClick={() => void handleSignOut()}>
+              <SignOut size={15} />
+              <span className="hidden sm:inline">Sign out</span>
+            </Button>
 
             <button
               type="button"
@@ -130,7 +152,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      {/* Full height mobile menu (B7) */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -152,12 +173,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </button>
             </div>
             <nav className="mt-8 flex flex-col gap-3">
-              {NAV_ITEMS.map((item, idx) => {
+              {allowedNav.map((item, idx) => {
                 const Icon = item.icon;
-                const active =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname.startsWith(item.href);
+                const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
                 return (
                   <motion.div
                     key={item.href}
@@ -191,9 +209,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </AnimatePresence>
 
       <main id="main-content" className="mx-auto max-w-[1600px] px-3 py-4 sm:px-4">
-        {children}
+        {routeAllowed ? (
+          children
+        ) : (
+          <div className="mx-auto my-16 max-w-md rounded-2xl border border-[#272727] bg-[#181818] p-8 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-[#f43f5e]/40 bg-[#f43f5e]/10 text-[#fb7185]">
+              <LockSimple size={22} weight="duotone" />
+            </div>
+            <h1 className="mt-4 heading-6 text-[#f5f5f4]">Access restricted for your role</h1>
+            <p className="mt-2 body-6 text-[#a8a29e]">
+              Your account ({roleMeta?.label ?? user.role}) does not have permission to view this module.
+            </p>
+            <div className="mt-6 flex justify-center gap-2">
+              <Button variant="primary" asChild>
+                <Link href={getDefaultRouteForRole(user.role)}>Go to my workspace</Link>
+              </Button>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
 }
-

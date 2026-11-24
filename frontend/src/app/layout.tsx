@@ -18,9 +18,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MedGrid Command | Isometric Pharmacy Inventory & Operations",
+  title: "MedGrid Pharmacy | Authentic Medicines & Multi Branch Operations",
   description:
-    "Real time 3D isometric pharmacy inventory, batch FEFO tracking, multi branch transfers, and retail POS control.",
+    "Seven retail pharmacy branches and one temperature controlled central warehouse with complete batch traceability.",
 };
 
 export default function RootLayout({
@@ -29,11 +29,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${lexend.variable} ${geistMono.variable} dark`}>
-      <body className="font-sans bg-[#000000] text-[#f5f5f4] antialiased">
+    <html lang="en" className={`${lexend.variable} ${geistMono.variable}`}>
+      <body className="font-sans bg-[#ffffff] text-[#0a0a0a] antialiased">
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:border focus:border-[#10b981] focus:bg-[#181818] focus:px-3 focus:py-2 focus:text-[#f5f5f4]"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:border focus:border-[#ff1f7a] focus:bg-[#ffffff] focus:px-3 focus:py-2 focus:text-[#0a0a0a]"
         >
           Skip to main content
         </a>
@@ -42,4 +42,3 @@ export default function RootLayout({
     </html>
   );
 }
-

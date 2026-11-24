@@ -1,23 +1,24 @@
 import Link from "next/link";
-import { Cube } from "@phosphor-icons/react/dist/ssr";
-import { Button } from "@/components/ui/button";
+import { FirstAidKit } from "@phosphor-icons/react/dist/ssr";
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#000000] p-6 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#272727] bg-[#181818] text-[#10b981]">
-        <Cube size={24} weight="duotone" />
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#ffffff] p-6 text-center text-[#0a0a0a]">
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff0f6] text-[#ff1f7a]">
+        <FirstAidKit size={24} weight="fill" />
       </div>
-      <h1 className="mt-4 heading-4 text-[#f5f5f4]">Page not found</h1>
-      <p className="mt-2 max-w-md body-5 text-[#a8a29e]">
-        The requested pharmacy route does not exist or has moved. Return to the isometric command dashboard.
+      <h1 className="mt-4 heading-4 text-[#0a0a0a]">Page not found</h1>
+      <p className="mt-2 max-w-md body-5 text-[#525252]">
+        The requested page does not exist or has moved. Return to the MedGrid Pharmacy homepage.
       </p>
       <div className="mt-6">
-        <Button variant="primary" asChild>
-          <Link href="/">Back to Isometric View</Link>
-        </Button>
+        <Link
+          href="/"
+          className="inline-flex items-center rounded-lg bg-[#ff1f7a] px-4 py-2.5 button-sm text-[#ffffff] transition-colors duration-300 hover:bg-[#e11d74]"
+        >
+          Back to Homepage
+        </Link>
       </div>
     </div>
   );
 }
-
