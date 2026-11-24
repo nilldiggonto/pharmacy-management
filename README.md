@@ -1,6 +1,9 @@
 # MedGrid Pharmacy & Wholesale Management Platform
 
 Centralized pharmacy inventory, wholesale distribution, and multi-branch retail POS platform built with FastAPI, PostgreSQL, Redis, Next.js, and Three.js.
+<img width="1901" height="696" alt="image" src="https://github.com/user-attachments/assets/02932f3a-c33c-4fb1-95c4-e1f7de45cf3b" />
+
+<img width="1893" height="945" alt="image" src="https://github.com/user-attachments/assets/a0d47034-770f-4523-82bb-228867520c25" />
 
 ## Tech Stack
 
