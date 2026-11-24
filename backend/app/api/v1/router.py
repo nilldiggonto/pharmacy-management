@@ -7,6 +7,7 @@ from app.api.v1 import (
     locations,
     products,
     purchasing,
+    sales,
     suppliers,
     transfers,
     users,
@@ -21,4 +22,5 @@ api_router.include_router(suppliers.router)
 api_router.include_router(inventory.router)
 api_router.include_router(purchasing.router)
 api_router.include_router(transfers.router)
+api_router.include_router(sales.router)
 api_router.include_router(audit.router)
