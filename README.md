@@ -4,7 +4,7 @@ Centralized pharmacy management platform built with FastAPI, PostgreSQL, Redis, 
 
 ## Tech Stack
 
-- **Backend**: FastAPI (Python 3.12 via pyenv), SQLAlchemy 2.0 (async + asyncpg), Alembic, PostgreSQL 16, Redis 7
+- **Backend**: FastAPI (Python 3.12 via pyenv), SQLAlchemy 2.0 (async + asyncpg), Alembic, PostgreSQL, Redis
 - **Frontend**: Next.js 16+ (Node.js 24 via nvm) [next phase]
 
 ## Initial Launch Scope (MVP)
@@ -23,45 +23,49 @@ Centralized pharmacy management platform built with FastAPI, PostgreSQL, Redis, 
 
 ```text
 .
-├── docker-compose.yml   # Local PostgreSQL 16 and Redis 7
-├── backend/             # FastAPI application, Alembic migrations, seed script, and pytest suite
-└── frontend/            # Next.js web application (upcoming)
+├── backend/       # FastAPI application, Alembic migrations, seed script, and pytest suite
+└── frontend/      # Next.js web application (upcoming)
 ```
 
-## Backend Setup & Run
+## Local Setup & Run
 
-1. Start PostgreSQL and Redis:
+### Backend (FastAPI)
+
+Ensure local PostgreSQL and Redis services are running, then from `backend/`:
+
+1. Copy environment file and set your local `DATABASE_URL` and `REDIS_URL`:
    ```bash
-   docker compose up -d
+   cp .env.example .env
    ```
-2. Configure environment:
+2. Install dependencies with `uv` (using Python 3.12):
    ```bash
-   cp backend/.env.example backend/.env
+   uv venv --python 3.12
+   uv pip install -e ".[dev]"
    ```
-3. Activate Python 3.12 virtual environment and install dependencies:
+3. Run database migrations and seed initial locations (1 main office, 1 central warehouse, 7 branches) and owner account (`owner@pharmacy.com` / `OwnerPass123!`):
    ```bash
-   cd backend
-   python -m venv .venv
-   source .venv/bin/activate
-   pip install -e ".[dev]"
+   uv run alembic revision --autogenerate -m "initial schema"
+   uv run alembic upgrade head
+   uv run python -m app.seed
    ```
-4. Create database tables via Alembic (or generate initial migration against PostgreSQL):
+4. Start the FastAPI dev server:
    ```bash
-   alembic revision --autogenerate -m "initial schema"
-   alembic upgrade head
-   ```
-5. Seed initial locations (1 main office, 1 central warehouse, 7 branches) and owner account (`owner@pharmacy.com` / `OwnerPass123!`):
-   ```bash
-   python -m app.seed
-   ```
-6. Run the API server:
-   ```bash
-   uvicorn app.main:app --reload --port 8000
+   uv run uvicorn app.main:app --reload --port 8000
    ```
    OpenAPI docs are available at `http://localhost:8000/docs`.
+
+### Frontend (Next.js)
+
+From `frontend/` (using Node 24 via `nvm`):
+
+```bash
+nvm use 24
+npm install
+npm run dev
+```
 
 ## Running Backend Tests
 
 ```bash
-backend/.venv/bin/pytest backend/tests
+cd backend && uv run pytest tests
 ```
